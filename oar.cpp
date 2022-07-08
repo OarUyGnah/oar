@@ -1,5 +1,7 @@
 ﻿#include "oar.h"
 //#include "src/oartimer.cpp"
+#include <vector>
+
 #define PAUSE system("pause")
 using namespace std;
 
@@ -7,48 +9,38 @@ using namespace std;
 
 int main()
 {
-	oar::timer t;
-	const char* str = t.to_time_str(t.getStartTp());
-	cout << str << endl;
-	t.printCurrentTime("123"/*, cout*/);
+	oar::timer t1;
+	std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+	oar::timer t2(tp);
+	oar::timer t3(std::chrono::system_clock::now());
+	oar::timer t4(time(nullptr));
 
-	t.printTimeStruct();
-	/*cout << t.hour() << endl;
-	cout << t.hour(t.getCurrTp()) << endl;
-	cout << t.hourFormat12() << endl;
-	cout << t.isAM() << endl;*/
-	cout << t.to_time_t(t.now()) << endl;
-	_sleep(2000);
-	cout << t.to_time_t(t.now()) << endl;
+	cout << "second " << t1.second() << '\n';
+	cout << "minute " << t1.minute() << '\n';
+	cout << "hour " << t1.hour() << '\n';
+	cout << "hourformat12 " << t1.hourFormat12() << '\n';
+	cout << "weekday " << t1.weekday() << '\n';
+	cout << "day " << t1.day() << '\n';
+	cout << "month " << t1.month() << '\n';
+	cout << "year " << t1.year() << '\n';
 
-	/*cout << t.second() << endl;
-	cout << t.second(t.getCurrTp()) << endl;
-	cout << t.minute() << endl;
-	cout << t.minute(t.to_time_t(t.getCurrTp())) << endl;
-	cout << t.hourFormat12() << endl;
-	cout << t.hourFormat12(t.to_time_t(t.getCurrTp())) << endl;
+	cout << "t1.to_time_t(t1.getCurrTp()) " << t1.to_time_t(t1.getCurrTp()) << '\n';
+	cout << "t1.to_time_t(t1.getStartTp()) " << t1.to_time_t(t1.getStartTp()) << '\n';
 
-	cout << t.weekday() << endl;
-	cout << t.weekday(t.to_time_t(t.getCurrTp())) << endl;
-	cout << "=======" << endl;
-
-	cout << t.day() << endl;
-	cout << t.day(t.to_time_t(t.getCurrTp())) << endl;
-	cout << "=======" << endl;
-
-	cout << t.month() << endl;
-	cout << t.month(t.to_time_t(t.getCurrTp())) << endl;
-	cout << "=======" << endl;
-	cout << t.year() << endl;
-	cout << t.year(t.to_time_t(t.getCurrTp())) << endl;*/
-	cout << "=================" << endl;
-	cout << t.to_time_str() << endl;
-	std::chrono::system_clock::time_point tmp;
-	auto&& test = tmp;
-	cout << "tmp:" << t.to_time_str(test) << endl;
-	cout << t.to_time_str(std::move(time_t(1657180800))) << endl;
-	cout << t.to_time_str(SECS_YR_2000) << endl;
+	cout << "t1.to_time_str() " << t1.to_time_str() << '\n';
+	cout << "t1.to_time_str(t1.getCurrTp()) " << t1.to_time_str(t1.getCurrTp()) << '\n';
+	cout << "t1.to_time_str(t1.to_time_t(t1.getStartTp())) " << t1.to_time_str(t1.to_time_t(t1.getStartTp())) << '\n';
 	
+	cout << t1.to_time_str(t1.from_time_t(t1.to_time_t(t1.getStartTp()))) << '\n';
+
+	_sleep(3000);
+	t1.parseTime();
+	cout << "after 3 seconds " << t1.to_time_str() << '\n';
+
+	auto timing1 = t1.now();
+	_sleep(100);
+	auto timing2 = t1.now();
+	cout << "100ms " << (timing2 - timing1).count() << "\n";
 	PAUSE;
 	return 0;
 }

@@ -49,7 +49,8 @@ namespace oar {
 #define hoursFormatTo12(H,RES)  ((H == 0) ? (RES = 0) : (RES = (H > 12 ? H - 12 : H)))
 
 		/*========================================================================*/
-
+const uint8_t monthDays[12] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
+class TimerImpl;
 	struct time_struct {
 		int second;
 		int minute;
@@ -65,41 +66,122 @@ namespace oar {
 		using _Tp = std::chrono::system_clock::time_point;
 		using _Dur = std::chrono::system_clock::duration;
 
-		_Tp current;
-		_Tp ctorstart;
-		_Tp dtorend;
-		_Tp start;
-		_Tp end;
-		_Dur duration;
-		std::string* timestr;
-		time_struct ts;//*********************************改为指针
-		time_t tt;
-		const uint8_t monthDays[12] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
-
+		TimerImpl* _pImpl;
 	public:
 		timer();
-		virtual			~timer();
+		timer(const _Tp& t);
+		timer(_Tp&& t);
+		timer(time_t t);
+		timer(const timer&) = delete;
+		~timer();
 		void			printCurrentTime(const char* format, std::ostream& os = std::cout);
-		_Tp& getStartTp();
-		_Tp& getCurrTp();
+		_Tp&			getStartTp();
+		_Tp&			getCurrTp();
+		const char*		to_time_str(const _Tp& timepoint);
+		const char*		to_time_str(_Tp&& timepoint = _Clock::now());
+		const char*		to_time_str(time_t t);
+		void			parseTime(const _Tp& timepoint);
+		void			parseTime(_Tp && timepoint = _Clock::now());
+		void			parseTime(time_t t);
 
-		const char* to_time_str(_Tp& timepoint);
-		const char* to_time_str(_Tp&& timepoint = _Clock::now());
-		const char* to_time_str(time_t t);
+		time_t			to_time_t(const _Tp& timepoint);
+		time_t			to_time_t(_Tp&& timepoint = _Clock::now());
+		_Tp				from_time_t(time_t time);
+		_Tp				now();
+		/*  time and date functions   */
+		int				second();          // the second now 
+		int				minute();          // the minute now
+		int				hour();            // the hour now 
+		int				hourFormat12();    // the hour now in 12 hour format
+		int				weekday();         // the weekday now (Sunday is day 1) 
+		int				day();             // the day now 
+		int				month();           // the month now  (Jan is month 1)
+		int				year();            // the full four digit year: (2009, 2010 etc) 
+		bool			isAM();            // returns true if time now is AM
+		bool			isPM();            // returns true if time now is PM
+
+
+		template<typename T>
+		int     second(T t);  // the second for the given time
+
+		template<typename T>
+		int     minute(T t);  // the minute for the given time
+
+		template<typename T>
+		int		hour(T t);
+
+		template<typename T>
+		int     hourFormat12(T t); // the hour for the given time in 12 hour format
+
+		template<typename T>
+		int     weekday(T t); // the weekday for the given time 
+
+		template<typename T>
+		int     day(T t);     // the day for the given time
+
+		template<typename T>
+		int     month(T t);   // the month for the given time
+
+		template<typename T>
+		int     year(T t);    // the year for the given time
+
+		template<typename T>
+		uint8_t isAM(time_t t);    // returns true the given time is AM	
+
+		template<typename T>
+		uint8_t isPM(T t);    // returns true the given time is PM
+	};
+
+
+
+
+
+
+
+
+
+	class TimerImpl {
+	private:
+		friend timer;
+		using _Clock = std::chrono::system_clock;
+		using _Tp = std::chrono::system_clock::time_point;
+		using _Dur = std::chrono::system_clock::duration;
+
+		_Tp current;
+		_Tp start;
+		_Tp end;
+		//_Dur duration;
+		std::string* timestr;
+		time_struct *ts;
+		//time_t tt;
+
+		TimerImpl();
+		void init();
+	public:
+		TimerImpl(const TimerImpl&) = delete;
+		TimerImpl(time_t t);
+		TimerImpl(const _Tp& t);
+		TimerImpl(_Tp&& t);
+
+		~TimerImpl();
+		void			printCurrentTime(const char* format, std::ostream& os = std::cout);
+		_Tp&			getStartTp();
+		_Tp&			getCurrTp();
+
+		const char*		to_time_str(const _Tp& timepoint);
+		const char*		to_time_str(_Tp&& timepoint = _Clock::now());
+		const char*		to_time_str(time_t t);
 		
+		void			parseTime(const _Tp& timepoint);
+		void			parseTime(_Tp && = _Clock::now());
+		void			parseTime(time_t t);
 
-		void	parseTime(_Tp& timepoint);
-		void	parseTime(_Tp && = _Clock::now());
-		void	parseTime(time_t t);
-
-		time_t			to_time_t(_Tp& timepoint);
+		time_t			to_time_t(const _Tp& timepoint);
 		time_t			to_time_t(_Tp&& timepoint = _Clock::now());
 		_Tp				from_time_t(time_t time);
 		_Tp				now();
 
 
-
-		void			printTimeStruct();
 
 		
 
@@ -151,13 +233,16 @@ namespace oar {
 		/**
 			还需要在分析左右值的传递
 		*/
-		void			__Parse_Time(_Tp timepoint);
-		/*template<class T>
-		void			__Parse_Time(T timepoint);*/
+		//void			__Parse_Time(_Tp timepoint);
+		template<class T>
+		void			__Parse_Time_Aux(T timepoint);
+		void			__Parse_Time(time_t t);
+
 		//const char*		__To_Time_Str(_Tp timepoint);
 		template<class T>
-		const char*		__To_Time_Str(T timepoint);
-		const char*		__Return_Time_Str(time_t t);
+		const char*		__To_Time_Str_Aux(T timepoint);
+		const char*		__To_Time_Str(time_t t);
+
 		time_t			__To_Time_T(_Tp timepoint);
 
 		

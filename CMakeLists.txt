@@ -11,7 +11,7 @@ aux_source_directory(. DIR_SRCS)
 # 添加子目录src
 add_subdirectory(src)
 # 将源代码添加到此项目的可执行文件。
-add_executable (oar ${DIR_SRCS})
+add_executable (oar ${DIR_SRCS} )
 
 #要将add_executable放在target_link_libraries前
 # 添加链接库
