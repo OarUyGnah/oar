@@ -6,4 +6,10 @@
 #include <iostream>
 #include <string>
 #include "src/oartimer.h"
+#include <vector>
+
+#ifdef linux
+#include <unistd.h>
+#endif
+#include "src/tools.h"
 // TODO: 在此处引用程序需要的其他标头。

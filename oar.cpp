@@ -9,6 +9,7 @@ using namespace std;
 
 int main()
 {
+	
 	oar::timer t1;
 	std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
 	oar::timer t2(tp);
@@ -33,14 +34,14 @@ int main()
 	
 	cout << t1.to_time_str(t1.from_time_t(t1.to_time_t(t1.getStartTp()))) << '\n';
 
-	_sleep(3000);
+	oar::SleepMillis(3000);
 	t1.parseTime();
 	cout << "after 3 seconds " << t1.to_time_str() << '\n';
 
 	auto timing1 = t1.now();
-	_sleep(100);
+	oar::SleepMillis(1000);
 	auto timing2 = t1.now();
-	cout << "100ms " << (timing2 - timing1).count() << "\n";
+	cout << "1000ms " << (timing2 - timing1).count() << "\n";
 	PAUSE;
 	return 0;
 }

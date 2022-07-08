@@ -2,6 +2,8 @@
 
 namespace oar {
 
+    
+
     //模板方法放上侧，否则出现模板专用化问题
     template<>
     int TimerImpl::second<TimerImpl::_Tp>(TimerImpl::_Tp t) {
