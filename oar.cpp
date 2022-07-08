@@ -1,5 +1,5 @@
 ﻿#include "oar.h"
-
+//#include "src/oartimer.cpp"
 #define PAUSE system("pause")
 using namespace std;
 
@@ -44,8 +44,9 @@ int main()
 	cout << "=================" << endl;
 	cout << t.to_time_str() << endl;
 	std::chrono::system_clock::time_point tmp;
-	cout << "tmp:" << t.to_time_str(tmp) << endl;
-	cout << t.to_time_str(time_t(1657180800)) << endl;
+	auto&& test = tmp;
+	cout << "tmp:" << t.to_time_str(test) << endl;
+	cout << t.to_time_str(std::move(time_t(1657180800))) << endl;
 	cout << t.to_time_str(SECS_YR_2000) << endl;
 	
 	PAUSE;

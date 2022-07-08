@@ -1,7 +1,7 @@
 #include "oartimer.h"
 
 namespace oar {
-	
+
     //模板方法放上侧，否则出现模板专用化问题
     template<>
     int timer::second<timer::_Tp>(timer::_Tp t) {
@@ -30,7 +30,7 @@ namespace oar {
         parseTime(t);
         return ts.hour;
     }
-   
+
     template<>
     int timer::hour<time_t>(time_t t) {
         parseTime(_Clock::from_time_t(t));
@@ -50,7 +50,7 @@ namespace oar {
         int res;
         return hoursFormatTo12(ts.hour, res);
     }
-	
+
     template<>
     int timer::weekday<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
@@ -98,24 +98,65 @@ namespace oar {
         parseTime(_Clock::from_time_t(t));
         return ts.year;
     }
+    
+    /*******************   to_time_str   *******************/
+    //不仅要考虑左右值还要考虑值传递
 
-    /******************************************************/
-    template<>
-    const char* timer::to_time_str<timer::_Tp>(timer::_Tp t) {
-        time_t tt = _Clock::to_time_t(t);
+    const char* timer::__Return_Time_Str(time_t tt) {
         *timestr = std::string(ctime(&tt));
         return timestr->c_str();
     }
-
     template<>
-    const char* timer::to_time_str<time_t>(time_t t) {
+    const char* timer::__To_Time_Str<timer::_Tp>(timer::_Tp timepoint)
+    {
+        std::cout << "_Tp" << std::endl;
+        //_Tp tmp = std::move(timepoint);
+        time_t tt = _Clock::to_time_t(timepoint);
+        *timestr = std::string(ctime(&tt));
+        return timestr->c_str();
+    }
+    template<>
+    const char* timer::__To_Time_Str<const timer::_Tp&>(const timer::_Tp& timepoint)
+    {
+        std::cout << "_Tp&" << std::endl;
+        time_t tt = _Clock::to_time_t(timepoint);
+        *timestr = std::string(ctime(&tt));
+        return timestr->c_str();
+    }
+    template<>
+    const char* timer::__To_Time_Str<timer::_Tp&&>(timer::_Tp&& timepoint)
+    {
+        std::cout << "_Tp&&" << std::endl;
+        _Tp tmp = std::move(timepoint);
+        time_t tt = _Clock::to_time_t(tmp);
+        *timestr = std::string(ctime(&tt));
+        return timestr->c_str();
+    }
+    template<>
+    const char* timer::__To_Time_Str<time_t>(time_t t)
+    {
+        std::cout << "time_t" << std::endl;
         *timestr = std::string(ctime(&t));
         return timestr->c_str();
     }
+    const char* timer::to_time_str(_Tp& timepoint)
+    {
+        std::cout << "to_time_str _Tp&" << std::endl;
+        return __To_Time_Str(std::forward<_Tp&>(timepoint));
+    }
+    const char* timer::to_time_str(_Tp&& timepoint)
+    {
+        std::cout << "to_time_str _Tp&&" << std::endl;
+        return __To_Time_Str(std::forward<_Tp&&>(timepoint));
+    }
+    const char* timer::to_time_str(time_t t) {
+        return __To_Time_Str(t);
+    } 
+    /*******************   to_time_str   *******************/
 
-    /******************************************************/
-
-    void timer::_Parse_Time(_Tp timepoint)
+    /*******************   parseTime   *******************/
+    //template<class T>
+    void timer::__Parse_Time(_Tp timepoint)
     {
         // break the given time_t into time components
             // this is a more compact version of the C library localtime function
@@ -170,76 +211,73 @@ namespace oar {
         ts.day = time + 1;     // day of month
     }
 
-    const char* timer::__To_Time_Str(_Tp timepoint)
+    void timer::parseTime(_Tp& timepoint)
     {
-        time_t tt = _Clock::to_time_t(timepoint);
-        *timestr = std::string(ctime(&tt));
-        return timestr->c_str();
+        __Parse_Time(std::forward<_Tp&>(timepoint));
     }
+
+    void timer::parseTime(_Tp&& timepoint)
+    {
+        __Parse_Time(std::forward<_Tp&&>(timepoint));
+    }
+
+    /*void timer::parseTime(time_t t) {
+        __Parse_Time(t);
+    }*/
+
+    /*******************   parseTime   *******************/
+    
+
+    
 
     time_t timer::__To_Time_T(_Tp timepoint)
     {
         return _Clock::to_time_t(/*std::forward<_Tp&>*/(timepoint));//rvalue waiting...
     }
 
-    void timer::parseTime(_Tp& timepoint)
-	{
-        _Parse_Time(std::forward<_Tp&>(timepoint));
-	}
-
-    void timer::parseTime(_Tp&& timepoint)
-    {
-        _Parse_Time(std::forward<_Tp&&>(timepoint));
-    }
+    
 
     void timer::printTimeStruct()
     {
-        std::cout<<"year : " <<(int)ts.year<< std::endl;
-        std::cout<<"month : " << (int)ts.month<< std::endl;
-        std::cout<<"day : " << (int)ts.day<< std::endl;
-        std::cout<<"hour : " << (int)ts.hour<< std::endl;
-        std::cout<<"minute : " << (int)ts.minute<< std::endl;
-        std::cout<<"second : " << (int)ts.second<< std::endl;
-        std::cout<<"weekday : " << (int)ts.weekday<< std::endl;
+        std::cout << "year : " << (int)ts.year << std::endl;
+        std::cout << "month : " << (int)ts.month << std::endl;
+        std::cout << "day : " << (int)ts.day << std::endl;
+        std::cout << "hour : " << (int)ts.hour << std::endl;
+        std::cout << "minute : " << (int)ts.minute << std::endl;
+        std::cout << "second : " << (int)ts.second << std::endl;
+        std::cout << "weekday : " << (int)ts.weekday << std::endl;
     }
 
-	timer::timer()
-	{
-		timestr = new std::string;
-		start = std::chrono::system_clock::now();
-		current = start;
+    timer::timer()
+    {
+        timestr = new std::string;
+        start = std::chrono::system_clock::now();
+        current = start;
         tt = _Clock::to_time_t(start);
         parseTime();
-	}
-	
-    timer::~timer()
-	{
-		delete timestr;
-	}
-	
-    void timer::printCurrentTime(const char* format, std::ostream& os)
-	{
-		os << to_time_str(getCurrTp()) << '\n';
-	}
-	
-    timer::_Tp& timer::getStartTp()
-	{
-		return start;
-	}
-	
-    timer::_Tp& timer::getCurrTp()
-	{
-		return current;
-	}
-	
-	const char* timer::to_time_str(_Tp& timepoint)
-	{
-        return __To_Time_Str(timepoint);
-	}
-    const char* timer::to_time_str(_Tp&& timepoint)
-    {
-        return __To_Time_Str(timepoint);
     }
+
+    timer::~timer()
+    {
+        delete timestr;
+    }
+
+    void timer::printCurrentTime(const char* format, std::ostream& os)
+    {
+        os << to_time_str(getCurrTp()) << '\n';
+    }
+
+    timer::_Tp& timer::getStartTp()
+    {
+        return start;
+    }
+
+    timer::_Tp& timer::getCurrTp()
+    {
+        return current;
+    }
+
+    
     time_t timer::to_time_t(_Tp& timepoint) {
         return __To_Time_T(timepoint);
     }
@@ -262,19 +300,19 @@ namespace oar {
         parseTime();
         return ts.second;
     }
-    
+
     int timer::minute()
     {
         parseTime();
         return ts.minute;
     }
-    
+
     int timer::hour()
-	{
+    {
         parseTime();
         return ts.hour;
-	}
-    
+    }
+
     int timer::hourFormat12()
     {
         parseTime();
@@ -308,16 +346,16 @@ namespace oar {
 
     bool timer::isAM()
     {
-        
+
         return !isPM();
 
     }
-    
+
     bool timer::isPM()
     {
-        return (hour(_Clock::now()))>=12;
+        return (hour(_Clock::now())) >= 12;
     }
-    
-    
+
+
 
 }

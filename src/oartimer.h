@@ -47,7 +47,7 @@ namespace oar {
 #define daysToTime_t    ((D)) ( (D) * SECS_PER_DAY) // fixed on Jul 22 2011
 #define weeksToTime_t   ((W)) ( (W) * SECS_PER_WEEK)   
 #define hoursFormatTo12(H,RES)  ((H == 0) ? (RES = 0) : (RES = (H > 12 ? H - 12 : H)))
-								
+
 		/*========================================================================*/
 
 	struct time_struct {
@@ -80,13 +80,17 @@ namespace oar {
 		timer();
 		virtual			~timer();
 		void			printCurrentTime(const char* format, std::ostream& os = std::cout);
-		_Tp&			getStartTp();
-		_Tp&			getCurrTp();
+		_Tp& getStartTp();
+		_Tp& getCurrTp();
 
 		const char* to_time_str(_Tp& timepoint);
 		const char* to_time_str(_Tp&& timepoint = _Clock::now());
+		const char* to_time_str(time_t t);
+		
+
 		void	parseTime(_Tp& timepoint);
-		void	parseTime(_Tp&& = _Clock::now());
+		void	parseTime(_Tp && = _Clock::now());
+		void	parseTime(time_t t);
 
 		time_t			to_time_t(_Tp& timepoint);
 		time_t			to_time_t(_Tp&& timepoint = _Clock::now());
@@ -94,11 +98,10 @@ namespace oar {
 		_Tp				now();
 
 
-		
+
 		void			printTimeStruct();
 
-		template<typename T>
-		const char* to_time_str(T t);
+		
 
 
 		/*  time and date functions   */
@@ -148,11 +151,19 @@ namespace oar {
 		/**
 			还需要在分析左右值的传递
 		*/
-		void			_Parse_Time(_Tp timepoint);
-		const char*		__To_Time_Str(_Tp timepoint);
+		void			__Parse_Time(_Tp timepoint);
+		/*template<class T>
+		void			__Parse_Time(T timepoint);*/
+		//const char*		__To_Time_Str(_Tp timepoint);
+		template<class T>
+		const char*		__To_Time_Str(T timepoint);
+		const char*		__Return_Time_Str(time_t t);
 		time_t			__To_Time_T(_Tp timepoint);
+
 		
 	};
+
+	
 }
 
 
