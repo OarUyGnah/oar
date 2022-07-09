@@ -80,34 +80,79 @@ class TimerImpl;
 		timer(_Tp&& t);
 		timer(time_t seconds,TIMETYPE type = TIMETYPE::SECOND);//注意是s还是ms
 		timer(const timer&) = delete;
+		timer& operator=(const _Tp& tp);
+		timer& operator=(_Tp&& tp);
+		timer& operator=(time_t t);
 		~timer();
+		//静态函数，返回当前时间点
+		static _Tp				now();
+
 		void			printCurrentTime(const char* format, std::ostream& os = std::cout);
+		//获取start时间点
 		_Tp&			getStartTp();
+		//获取current时间点
 		_Tp&			getCurrTp();
+		//根据时间点或time_t生成对应时间的字符串，time_t默认单位为秒，无参默认打印start时间点
+		//不会影响_pImpl->_Ts_Dynamic结构体
 		const char*		to_time_str(const _Tp& timepoint);
-		const char*		to_time_str(_Tp&& timepoint = _Clock::now());
-		const char*		to_time_str(time_t t);
+		const char*		to_time_str(_Tp&& timepoint);
+		const char*     to_time_str(time_t t);
+		const char*     to_time_str();
+		
+		//解析时间点或time_t，并更新_pImpl->_Ts_Dynamic结构体
+		//无参默认解析start时间点
+		//有参数将则将当前参数对应信息更新到_pImpl->_Ts_Dynamic结构体
 		void			parseTime(const _Tp& timepoint);
-		void			parseTime(_Tp && timepoint = _Clock::now());
+		void			parseTime(_Tp && timepoint);
 		void			parseTime(time_t t);
+		void			parseTime();
 
+		//时间点转换为time_t，无参默认转换start
+		//不会影响_pImpl->_Ts_Dynamic结构体
 		time_t			to_time_t(const _Tp& timepoint);
-		time_t			to_time_t(_Tp&& timepoint = _Clock::now());
+		time_t			to_time_t(_Tp&& timepoint);
+		time_t			to_time_t();
+		//通过给定time_t类型的time获取对应时间点
 		_Tp				from_time_t(time_t time);
-		_Tp				now();
-		/*  time and date functions   */
-		int				second();          // the second now 
-		int				minute();          // the minute now
-		int				hour();            // the hour now 
-		int				hourFormat12();    // the hour now in 12 hour format
-		int				weekday();         // the weekday now (Sunday is day 1) 
-		int				day();             // the day now 
-		int				month();           // the month now  (Jan is month 1)
-		int				year();            // the full four digit year: (2009, 2010 etc) 
-		bool			isAM();            // returns true if time now is AM
-		bool			isPM();            // returns true if time now is PM
 
+		
+		//无参时间函数，打印当前_pImpl->_Ts_Dynamic结构体的对应数据
+		//不推荐使用，因为会触发parseTime函数，导致_pImpl->_Ts_Dynamic结构体的内容改变
+		int				second();          
+		int				minute();          
+		int				hour();            
+		int				hourFormat12();    
+		int				weekday();         
+		int				day();             
+		int				month();           
+		int				year();            
+		bool			isAM();            
+		bool			isPM();            
+		//返回start时间点的对应数据
+		int getStartSecond();
+		int getStartMinute();
+		int getStartHour();
+		int getStartHourFormat12();
+		int getStartWeekday();
+		int getStartDay();
+		int getStartMonth();
+		int getStartYear();
+		bool startIsAM();
+		bool startIsPM();
+		//返回current时间点的对应数据
+		int getCurrSecond();
+		int getCurrMinute();
+		int getCurrHour();
+		int getCurrHourFormat12();
+		int getCurrWeekday();
+		int getCurrDay();
+		int getCurrMonth();
+		int getCurrYear();
+		bool currIsAM();
+		bool currIsPM();
 
+		//有参时间函数模板，特化了timer::_Tp和time_t类型，根据参数获得对应的信息
+		//内部调用parseTime(t) 导致_pImpl->_Ts_Dynamic结构体更新
 		template<typename T>
 		int     second(T t);  
 
@@ -175,7 +220,8 @@ class TimerImpl;
 		_Tp end;
 		//_Dur duration;
 		std::string* timestr;
-		time_struct *ts;
+		time_struct* _Ts_init;
+		time_struct* _Ts_Dynamic;
 		//time_t tt;			   
 
 	public:

@@ -10,33 +10,60 @@ namespace oar {
 
     timer::timer(const _Tp& tp) :_pImpl(new TimerImpl(tp))
     {        
-        parseTime();
+        parseTime(tp);
     }
 
     timer::timer(_Tp&& t): _pImpl(new TimerImpl(std::move(t)))
     {        
-        parseTime();
+        parseTime(t);
     }
 
     
 
-    timer::timer(time_t millseconds, TIMETYPE type)
+    timer::timer(time_t times, TIMETYPE type)
     {
+        int time = times;
         switch (type)
         {
         case oar::SECOND:
-            _pImpl = new TimerImpl(millseconds);
             break;
         case oar::MILLSECOND:
-            _pImpl = new TimerImpl(millseconds / 1000);
+            time /= 1000;
             break;
         case oar::MICROSECOND:
             break;
         default:
             break;
         }
-        parseTime();
+        //std::cout << "times is " << time << std::endl;
+        _pImpl = new TimerImpl(time);
+        parseTime(time);
     }
+
+    timer& timer::operator=(const _Tp& tp)
+    {
+        //std::cout << "operator = &" << std::endl;
+        _pImpl = new TimerImpl(std::forward<const _Tp>(tp));
+        parseTime(tp);
+        return *this;// TODO: 在此处插入 return 语句
+    }
+
+    timer& timer::operator=(_Tp&& tp)
+    {
+        //std::cout << "operator = &&" << std::endl;
+        _pImpl = new TimerImpl(std::forward<_Tp>(tp));
+        parseTime(std::move(tp));
+        return *this;
+    }
+    timer& timer::operator=(time_t t)
+    {
+        //std::cout << "operator = time_t" << std::endl;
+        _pImpl = new TimerImpl(t);
+        parseTime(t);
+        return *this;
+    }
+
+    
 
     timer::~timer()
     {
@@ -54,7 +81,7 @@ namespace oar {
         // TODO: 在此处插入 return 语句
     }
 
-    timer::_Tp& timer::getCurrTp()
+    timer::_Tp& timer::getCurrTp()//last parseTime timepoint
     {
         return _pImpl->current;
     }
@@ -65,97 +92,97 @@ namespace oar {
     template<>
     int timer::second<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
-        return _pImpl->ts->second;
+        return _pImpl->_Ts_Dynamic->second;
     }
     template<>
     int timer::second<time_t>(time_t t) {
         parseTime(t);
-        return _pImpl->ts->second;
+        return _pImpl->_Ts_Dynamic->second;
     }
 
     template<>
     int timer::minute<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
-        return _pImpl->ts->minute;
+        return _pImpl->_Ts_Dynamic->minute;
     }
     template<>
     int timer::minute<time_t>(time_t t) {
         parseTime(t);
-        return _pImpl->ts->minute;
+        return _pImpl->_Ts_Dynamic->minute;
     }
 
     template<>
     int timer::hour<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
-        return _pImpl->ts->hour;
+        return _pImpl->_Ts_Dynamic->hour;
     }
 
     template<>
     int timer::hour<time_t>(time_t t) {
         parseTime(t);
-        return _pImpl->ts->hour;
+        return _pImpl->_Ts_Dynamic->hour;
     }
 
     template<>
     int timer::hourFormat12<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
         int res;
-        return hoursFormatTo12(_pImpl->ts->hour, res);
+        return hoursFormatTo12(_pImpl->_Ts_Dynamic->hour, res);
     }
 
     template<>
     int timer::hourFormat12<time_t>(time_t t) {
         parseTime(t);
         int res;
-        return hoursFormatTo12(_pImpl->ts->hour, res);
+        return hoursFormatTo12(_pImpl->_Ts_Dynamic->hour, res);
     }
 
     template<>
     int timer::weekday<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
-        return _pImpl->ts->weekday;
+        return _pImpl->_Ts_Dynamic->weekday;
     }
 
     template<>
     int timer::weekday<time_t>(time_t t) {
         parseTime(t);
-        return _pImpl->ts->weekday;
+        return _pImpl->_Ts_Dynamic->weekday;
     }
 
     template<>
     int timer::day<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
-        return _pImpl->ts->day;
+        return _pImpl->_Ts_Dynamic->day;
     }
 
     template<>
     int timer::day<time_t>(time_t t) {
         parseTime(t);
-        return _pImpl->ts->day;
+        return _pImpl->_Ts_Dynamic->day;
     }
 
     template<>
     int timer::month<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
-        return _pImpl->ts->month;
+        return _pImpl->_Ts_Dynamic->month;
     }
 
     template<>
     int timer::month<time_t>(time_t t) {
         parseTime(t);
-        return _pImpl->ts->month;
+        return _pImpl->_Ts_Dynamic->month;
     }
 
     template<>
     int timer::year<timer::_Tp>(timer::_Tp t) {
         parseTime(t);
-        return _pImpl->ts->year;
+        return _pImpl->_Ts_Dynamic->year;
     }
 
     template<>
     int timer::year<time_t>(time_t t) {
         parseTime(t);
-        return _pImpl->ts->year;
+        return _pImpl->_Ts_Dynamic->year;
     }
 
     
@@ -171,6 +198,11 @@ namespace oar {
         return __To_Time_T(timepoint); 
     }
 
+    time_t timer::to_time_t()
+    {
+        return __To_Time_T(_pImpl->start);
+    }
+
     timer::_Tp timer::from_time_t(time_t time)
     {
         return _Clock::from_time_t(time);
@@ -183,44 +215,44 @@ namespace oar {
 
     int timer::second()
     {
-        return _pImpl->ts->second;
+        return _pImpl->_Ts_Dynamic->second;
     }
 
     int timer::minute()
     {
-        return _pImpl->ts->minute;
+        return _pImpl->_Ts_Dynamic->minute;
     }
 
     int timer::hour()
     {
-        return _pImpl->ts->hour;
+        return _pImpl->_Ts_Dynamic->hour;
     }
 
     int timer::hourFormat12()
     {
         parseTime();
         int res;
-        return hoursFormatTo12(_pImpl->ts->hour, res); 
+        return hoursFormatTo12(_pImpl->_Ts_Dynamic->hour, res); 
     }
 
     int timer::weekday()
     {
-        return _pImpl->ts->weekday;
+        return _pImpl->_Ts_Dynamic->weekday;
     }
 
     int timer::day()
     {
-        return _pImpl->ts->day;
+        return _pImpl->_Ts_Dynamic->day;
     }
 
     int timer::month()
     {
-        return _pImpl->ts->month;
+        return _pImpl->_Ts_Dynamic->month;
     }
 
     int timer::year()
     {
-        return _pImpl->ts->year;
+        return _pImpl->_Ts_Dynamic->year;
     }
 
     bool timer::isAM()
@@ -231,6 +263,106 @@ namespace oar {
     bool timer::isPM()
     {
         return hour(_Clock::now()) >= 12;
+    }
+
+    int timer::getStartSecond()
+    {
+        return second(getStartTp());
+    }
+
+    int timer::getStartMinute()
+    {
+        return minute(getStartTp());
+    }
+
+    int timer::getStartHour()
+    {
+        return hour(getStartTp());
+    }
+
+    int timer::getStartHourFormat12()
+    {
+        return hourFormat12(getStartTp());
+    }
+
+    int timer::getStartWeekday()
+    {
+        return weekday(getStartTp());
+    }
+
+    int timer::getStartDay()
+    {
+        return day(getStartTp());
+    }
+
+    int timer::getStartMonth()
+    {
+        return month(getStartTp());
+    }
+
+    int timer::getStartYear()
+    {
+        return year(getStartTp());
+    }
+
+    bool timer::startIsAM()
+    {
+        return !startIsPM();
+    }
+
+    bool timer::startIsPM()
+    {
+        return getStartHour() >= 12;
+    }
+
+    int timer::getCurrSecond()
+    {
+        return second(now());
+    }
+
+    int timer::getCurrMinute()
+    {
+        return minute(now());
+    }
+
+    int timer::getCurrHour()
+    {
+        return hour(now());
+    }
+
+    int timer::getCurrHourFormat12()
+    {
+        return hourFormat12(now());
+    }
+
+    int timer::getCurrWeekday()
+    {
+        return weekday(now());
+    }
+
+    int timer::getCurrDay()
+    {
+        return day(now());
+    }
+
+    int timer::getCurrMonth()
+    {
+        return month(now());
+    }
+
+    int timer::getCurrYear()
+    {
+        return year(now());
+    }
+
+    bool timer::currIsAM()
+    {
+        return !currIsPM();
+    }
+
+    bool timer::currIsPM()
+    {
+        return getCurrHour() >= 12;
     }
 
     
@@ -248,19 +380,19 @@ namespace oar {
 
         time = t;
         _pImpl->current = _Clock::now();
-        _pImpl->ts->second = time % 60;
+        _pImpl->_Ts_Dynamic->second = time % 60;
         time /= 60;
-        _pImpl->ts->minute = time % 60;
+        _pImpl->_Ts_Dynamic->minute = time % 60;
         time /= 60;
-        _pImpl->ts->hour = time % 24 + 8;//北京时间东八区+8
+        _pImpl->_Ts_Dynamic->hour = time % 24 + 8;//北京时间东八区+8
         time /= 24;
-        _pImpl->ts->weekday = ((time + 4) % 7);
+        _pImpl->_Ts_Dynamic->weekday = ((time + 4) % 7);
         year = 0;
         days = 0;
         while ((unsigned)(days += (LEAP_YEAR(year) ? 366 : 365)) <= time) {
             year++;
         }
-        _pImpl->ts->year = year + 1970;
+        _pImpl->_Ts_Dynamic->year = year + 1970;
         days -= LEAP_YEAR(year) ? 366 : 365;
         time -= days; // now it is days in this year, starting at 0
 
@@ -269,7 +401,7 @@ namespace oar {
         monthLength = 0;
         for (month = 0; month < 12; month++) {
             if (month == 1) { // february
-                if (LEAP_YEAR(_pImpl->ts->year)) {
+                if (LEAP_YEAR(_pImpl->_Ts_Dynamic->year)) {
                     monthLength = 29;
                 }
                 else {
@@ -287,8 +419,8 @@ namespace oar {
                 break;
             }
         }
-        _pImpl->ts->month = month + 1;    
-        _pImpl->ts->day = time + 1;     // day of month
+        _pImpl->_Ts_Dynamic->month = month + 1;    
+        _pImpl->_Ts_Dynamic->day = time + 2;     // day of month
     }
 
     template<>
@@ -314,6 +446,11 @@ namespace oar {
 
     void timer::parseTime(time_t t) {
         __Parse_Time_Aux(t);
+    }
+
+    void timer::parseTime()
+    {
+        __Parse_Time_Aux(_pImpl->start);
     }
 
     /*******************   to_time_str   *******************/
@@ -367,6 +504,11 @@ namespace oar {
     {
         return __To_Time_Str_Aux(t);
     }
+
+    const char* timer::to_time_str()
+    {
+        return __To_Time_Str_Aux(_pImpl->start);
+    }
     
     time_t timer::__To_Time_T(_Tp timepoint)
     {
@@ -376,7 +518,7 @@ namespace oar {
    //===========================================================
 	void TimerImpl::init() {
         timestr = new std::string;
-        ts = new time_struct;
+        _Ts_Dynamic = new time_struct;
         current = start;
     }
 
@@ -407,7 +549,7 @@ namespace oar {
     TimerImpl::~TimerImpl()
     {
         std::cout << "dtor impl..." << std::endl;
-        delete ts;
+        delete _Ts_Dynamic;
         delete timestr;
     }
 
