@@ -10,7 +10,7 @@ using namespace std;
 int main()
 {
 	
-	oar::timer t1;
+	/*oar::timer t1;
 	std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
 	oar::timer t2(tp);
 	oar::timer t3(std::chrono::system_clock::now());
@@ -41,7 +41,16 @@ int main()
 	auto timing1 = t1.now();
 	oar::SleepMillis(1000);
 	auto timing2 = t1.now();
-	cout << "1000ms " << (timing2 - timing1).count() << "\n";
+	cout << "1000ms " << (timing2 - timing1).count() << "\n";*/
+
+	cout << "======================" << endl;
+	oar::timer testtimer((time_t)1657355305000,oar::MILLSECOND);//默认为SECOND
+	auto tp = std::chrono::system_clock::from_time_t((time_t)1657355305);
+	cout << "testtimer.to_time_t(tp)" << testtimer.to_time_t(tp) << endl;
+	cout << testtimer.to_time_t() << endl;
+	cout << testtimer.to_time_str(testtimer.getStartTp()) << endl;
+	cout << testtimer.to_time_str(testtimer.getCurrTp()) << endl;
+	oar::SleepMillis(3000);
 	PAUSE;
 	return 0;
 }
