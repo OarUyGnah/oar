@@ -2,7 +2,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "../oar/Mutex.h"
-//#include "./testHeader.h"
+#include "../oar/ThisThread.h"
+
 
 using namespace oar;
 
@@ -15,7 +16,8 @@ void* func(void* arg) {
   for (int i = 0 ;i < 10 ;++i) {
     usleep(100*1000);
     //    sleep(1);
-    printf("time is %d, current pid is %d\n",i,gettid());
+    printf("time is %d, current tid is %d == %d name is %s, threadIdString is %s\n", \
+	   i,ThisThread::tid(),gettid(),ThisThread::name(),ThisThread::tidString());
   }
   //  printf("1231\n");
   return nullptr;
@@ -47,7 +49,9 @@ int main() {
   //sleep(3);
   for (int i = 0;i< 50 ;++i) {
     usleep(100*1000);
-    printf("current pid is %d\n",gettid());
+     printf("current tid is %d == %d name is %s, threadIdString is %s\n", \
+	   ThisThread::tid(),gettid(),ThisThread::name(),ThisThread::tidString());
+     printf("pid is %d\n",getpid());
   }
   getchar();
   return 0;
