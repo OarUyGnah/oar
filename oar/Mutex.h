@@ -2,14 +2,15 @@
 #define __OAR_MUTEX_H__
 
 #include "./utils/noncopyable.h"
+#include "ThisThread.h"
 #include <pthread.h>
 #include <assert.h>
 namespace oar {
 
-  class Mutex : oar::Noncopyable {
+  class Mutex : Noncopyable {
   public:
     
-    Mutex() : _holder(0) {
+    Mutex() : _holderTid(0) {
       pthread_mutex_init(&_mutex,nullptr);
     }
     
@@ -19,10 +20,24 @@ namespace oar {
     
     void lock() {
       pthread_mutex_lock(&_mutex);
+      setTid();
     }
     
     void unlock() {
+      clearTid();
       pthread_mutex_unlock(&_mutex);
+    }
+
+    void setTid() {
+      _holderTid = ThisThread::tid();
+    }
+    
+    void clearTid() {
+      _holderTid = 0;
+    }
+
+    bool LockedByThisThread() {
+      return _holderTid == ThisThread::tid();
     }
     
     pthread_mutex_t* getMutexPtr() {
@@ -30,13 +45,32 @@ namespace oar {
     }
     
   private:
-    
+
     pthread_mutex_t _mutex;
-    pid_t _holder;
+    // 表示给互斥量上锁线程的tid
+    pid_t _holderTid;
     
   };
 
-  class MutexGuard : oar::Noncopyable{
+  /*
+    为条件变量 pthread_cond_wait()调用时设计的
+   */
+  class HolderTidGuard : Noncopyable {
+  public:
+    
+    HolderTidGuard(Mutex& m) : _mutex(m) {
+      _mutex.clearTid();
+    }
+    
+    ~HolderTidGuard() {
+      _mutex.setTid();
+    }
+
+  private:
+    Mutex& _mutex;
+  };
+  
+  class MutexGuard : Noncopyable{
   public:
     
     MutexGuard(Mutex& m) : _mutex(m) {

@@ -16,6 +16,7 @@ void* func(void* arg) {
   for (int i = 0 ;i < 10 ;++i) {
     usleep(100*1000);
     //    sleep(1);
+    printf("lockedbythisthread is %d\n",m.LockedByThisThread());
     printf("time is %d, current tid is %d == %d name is %s, threadIdString is %s\n", \
 	   i,ThisThread::tid(),gettid(),ThisThread::name(),ThisThread::tidString());
   }

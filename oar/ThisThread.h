@@ -1,6 +1,7 @@
-#ifndef __THISTHREAD_H__
-#define __THISTHREAD_H__
+#ifndef __OAR_THISTHREAD_H__
+#define __OAR_THISTHREAD_H__
 
+#include "Types.h"
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <stdio.h>
