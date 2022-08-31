@@ -17,11 +17,11 @@ namespace oar {
   
   public:
     typedef std::function<void()> threadFunc;
-    Thread(threadFunc func,const std::string& name = std::string());
+    explicit Thread(threadFunc func,const std::string& name = std::string());
     
     
-    //    template<typename Func,typename ...Args>
-    //Thread(Func &&f,Args && ...args);
+    template<typename Func,typename ...Args>
+    Thread(Func &&f,Args && ...args);
     
     
     ~Thread();
@@ -31,6 +31,7 @@ namespace oar {
     int join();
     pid_t tid() { return _tid; }
 
+    
     //    static int threadNum() { return __threadNum. ;}
     //static atomic<int> __threadNum; 
   private:
@@ -44,6 +45,18 @@ namespace oar {
 
   };
 
+  // 放头文件才生效
+  template<typename Func,typename ...Args>
+  Thread::Thread(Func&& f,Args&& ...args)
+    :_pthreadId(0),
+     _name(""),
+     _joined(false),
+     _started(false),
+     _tid(0),
+     _func(std::bind(std::forward<Func>(f),std::forward<Args>(args)...))
+  {
+    printf("F&&\n");
+  }
 
   struct ThreadInfo {
     using threadFunc = Thread::threadFunc;
@@ -51,7 +64,7 @@ namespace oar {
     std::string _name;
     pid_t* _tid;
     
-    ThreadInfo(threadFunc func,std::string& name,pid_t* tid)
+    ThreadInfo(threadFunc& func,std::string& name,pid_t* tid)
       :_func(func),
        _name(name),
        _tid(tid)
@@ -69,9 +82,14 @@ namespace oar {
       }
     }
     
-  };  
+  };
 
-
+  template<typename Func,typename ...Args>
+  Thread::threadFunc convertFunc(Func &&f,Args && ...args) {
+    //  return Func(std::bind(std::forward<Func>(f),std::forward<Args>(args)...));
+    return std::bind(std::forward<Func>(f),std::forward<Args>(args)...);
+  }
+  
 }
 
 
