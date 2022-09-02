@@ -5,6 +5,7 @@
 #include "ThisThread.h"
 #include <pthread.h>
 #include <assert.h>
+
 namespace oar {
 
   class Mutex : Noncopyable {

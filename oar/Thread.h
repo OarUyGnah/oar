@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <atomic>
 #include <assert.h>
-
+#include <stdio.h>
 namespace oar {
 
   struct ThreadInfo;
@@ -89,7 +89,7 @@ namespace oar {
     //  return Func(std::bind(std::forward<Func>(f),std::forward<Args>(args)...));
     return std::bind(std::forward<Func>(f),std::forward<Args>(args)...);
   }
-  
+
 }
 
 

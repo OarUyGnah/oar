@@ -55,5 +55,7 @@ int main() {
   
   //  getchar();
   t2.join();
+
+  oar::testthread();
   return 0;
 }
