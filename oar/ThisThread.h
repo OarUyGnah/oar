@@ -45,8 +45,11 @@ namespace oar {
       return threadName;
     }
 
-    //bool isMainThread();
+    inline bool isMainThread() {
+      return tid() == ::getpid();
+    }
 
+    std::string stackTrace(bool demangle);
 
   }
 

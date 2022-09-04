@@ -16,6 +16,7 @@ void* func(void* arg) {
   for (int i = 0 ;i < 10 ;++i) {
     usleep(100*1000);
     //    sleep(1);
+    printf("ismainthread ? %d\n",ThisThread::isMainThread());
     printf("lockedbythisthread is %d\n",m.LockedByThisThread());
     printf("time is %d, current tid is %d == %d name is %s, threadIdString is %s\n", \
 	   i,ThisThread::tid(),gettid(),ThisThread::name(),ThisThread::tidString());
@@ -31,7 +32,6 @@ int main() {
   printf("t1 %d t2 %d\n",t1,t2);
   int arg1 = 1,arg2 = 2;
   pthread_create(&t1,nullptr,func,nullptr);
-  printf("create 1\n");
 
   pthread_create(&t1,nullptr,func,(void*)&arg2);
   /*  if (pthread_tryjoin_np(t1, nullptr)) {
@@ -50,9 +50,11 @@ int main() {
   //sleep(3);
   for (int i = 0;i< 50 ;++i) {
     usleep(100*1000);
-     printf("current tid is %d == %d name is %s, threadIdString is %s\n", \
+    printf("ismainthread ? %d\n",ThisThread::isMainThread());
+
+    printf("current tid is %d == %d name is %s, threadIdString is %s\n", \
 	   ThisThread::tid(),gettid(),ThisThread::name(),ThisThread::tidString());
-     printf("pid is %d\n",getpid());
+    printf("pid is %d\n",getpid());
   }
   getchar();
   return 0;

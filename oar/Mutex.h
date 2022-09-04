@@ -36,7 +36,7 @@ namespace oar {
     void clearTid() {
       _holderTid = 0;
     }
-
+    
     bool LockedByThisThread() {
       return _holderTid == ThisThread::tid();
     }
@@ -53,23 +53,59 @@ namespace oar {
     
   };
 
-  /*
-    为条件变量 pthread_cond_wait()调用时设计的
-   */
-  class HolderTidGuard : Noncopyable {
+  class RWMutex : Noncopyable {
   public:
     
-    HolderTidGuard(Mutex& m) : _mutex(m) {
-      _mutex.clearTid();
+    RWMutex() {
+      pthread_rwlock_init(&_mutex, nullptr);
     }
     
-    ~HolderTidGuard() {
-      _mutex.setTid();
+    ~RWMutex() {
+      pthread_rwlock_destroy(&_mutex);
     }
 
+    void rdlock() {      
+      pthread_rwlock_rdlock(&_mutex);
+      _rdTid = ThisThread::tid();
+    }
+
+    void wrlock() {
+      pthread_rwlock_wrlock(&_mutex);
+      _wrTid = ThisThread::tid();
+    }
+
+    void unlock() {
+      _rdTid = _wrTid = 0;
+      pthread_rwlock_unlock(&_mutex);
+    }
+    
   private:
-    Mutex& _mutex;
+    
+    pthread_rwlock_t _mutex;
+    pid_t _rdTid;
+    pid_t _wrTid;
+    
   };
+
+  
+
+  /*
+    为条件变量 pthread_cond_wait()调用时设计的
+  */
+    class HolderTidGuard : Noncopyable {
+    public:
+    
+      HolderTidGuard(Mutex& m) : _mutex(m) {
+	_mutex.clearTid();
+      }
+    
+      ~HolderTidGuard() {
+	_mutex.setTid();
+      }
+
+    private:
+      Mutex& _mutex;
+    };
   
   class MutexGuard : Noncopyable{
   public:
@@ -86,6 +122,39 @@ namespace oar {
     
     Mutex& _mutex;
     
+  };
+
+  class ReadMutexGuard : Noncopyable {
+  public:
+    ReadMutexGuard(RWMutex& rm) : _rmutex(rm) {
+      _rmutex.rdlock();
+    }
+    
+    ~ReadMutexGuard() {
+      _rmutex.unlock();
+    }
+    
+  private:
+    
+    RWMutex& _rmutex;
+    
+  };
+
+  class WriteMutexGuard : Noncopyable {
+  public:
+    
+    WriteMutexGuard(RWMutex& wm) : _wmutex(wm) {
+      _wmutex.wrlock();
+    }
+    
+    ~WriteMutexGuard() {
+      _wmutex.unlock();
+    }
+    
+  private:
+    
+    RWMutex& _wmutex;
+     
   };
 }
 

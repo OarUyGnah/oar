@@ -9,6 +9,7 @@ public:
   
   template<typename F,typename ...Args>
   Test(F&& f,Args&& ...args){
+    cout << sizeof...(args) << endl;
     _f = std::bind(std::forward<F>(f),std::forward<Args>(args)...);
   }
   void run() {
