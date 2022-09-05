@@ -2,6 +2,11 @@
 #include "../oar/ThisThread.h"
 #include <stdio.h>
 
+/*
+  g++ threadTest.cc ../oar/Thread.cc ../oar/ThisThread.cc ../oar/Semaphore.cc -lpthread
+*/
+
+
 using namespace oar;
 void test() {
   for (int i = 0;i< 100;++i)
@@ -49,5 +54,15 @@ int main() {
     printf("total threadNums is %d\n",Thread::threadNum()); // total threadNums is 5
   }
   printf("total threadNums is %d\n",Thread::threadNum()); // total threadNums is 4
+
+  Thread t5([](int num) {
+    for(int i = 0; i < num; ++i) {
+      printf("%s times %d\n","t5",i);
+      sleep(1);
+    }
+  },10);
+  t5.start();
+  t5.join();
+
   return 0;
 }

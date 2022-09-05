@@ -22,17 +22,27 @@ namespace oar {
   void Thread::start() {
     assert(!_started);
     _started = true;
-    ThreadInfo* info = new ThreadInfo(_func,_name,&_tid);
+    ThreadInfo* info = new ThreadInfo(_func,_name,&_tid,&_sem);
     pthread_create(&_pthreadId,nullptr,&startInThread,info);
+    //    printf("before _sem->wait()...\n");
+    _sem.wait();
+    //    printf("after _sem->wait()...\n");
   }
 
   int Thread::join() {
     assert(_started);
     assert(!_joined);
     _joined = true;
+    printf("join...\n");
     return pthread_join(_pthreadId,nullptr);
   }
 
+  int Thread::detach() {
+    assert(_started && !_joined);
+    _joined = false;
+    printf("detach...\n");
+    return pthread_detach(_pthreadId);
+  }
   /*
     template<typename Func,typename ...Args>
     auto convertFunc(Func &&f,Args && ...args) -> decltype(std::bind(std::forward<Func>(f),std::forward<Args>(args)...)){
