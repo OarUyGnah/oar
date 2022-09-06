@@ -38,11 +38,6 @@ namespace oar {
       strcpy(str,s.c_str());
     }
     
-    void test(int i) {
-      for (int j = 0;j<i;j++)
-	printf("current is %d\n", j);
-    }
-
     
   }
 }
