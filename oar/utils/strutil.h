@@ -1,6 +1,7 @@
 #ifndef __OAR_STRUTIL_H__
 #define __OAR_STRUTIL_H__
 
+#include <string.h>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -65,18 +66,60 @@ namespace oar {
       return str.rfind(c);
     }
 
-    template<typename T = const char*>
+    // 把string和const char*的进一步封装
+    // 返回第几次出现的位置，如果不到则返回size()值，并将最后一次出现的位置存储在max中
+    template<typename T = std::string>
     size_t findNth(std::string &str,T c,size_t nth,size_t *max = nullptr) {
-      size_t times = 0;
-      /*      find_if(begin(str),end(str),[&times](T &c) ->bool {
-	if(c == )
-	});*/
+      if(nth <= 0) return str.size();
+      size_t size = str.size();
+      *max = size;
+      int pos = 0;
+      int idx = 0;
+      int len = c.size();
+      for_each(begin(str),end(str),[&](char &cc) {
+	if(idx+len <= str.size() && !strncmp(&str[idx],c.c_str(),len)) {
+	  if(nth > 0) {
+	    --nth;
+	    if(max) {
+	      pos = idx;
+	      *max = pos;
+	    }
+	  }
+	}
+	++idx;
+      });
+      return nth == 0 ? pos : size;
+    
     }
     
 
-    // 返回第几次出现的位置，如果不到则返回size()值，并将最后一次出现的位置存储在max中,from1即从1开始
     template<>
-    inline size_t findNth(std::string &str,char c,size_t nth,size_t *max) {
+    inline size_t findNth<const char*>(std::string &str,const char* c,size_t nth,size_t *max) {
+      if(nth < 0) return str.size();
+      size_t size = str.size();
+      *max = size;
+      int pos = 0;
+      int idx = 0;
+      int len = strlen(c);
+      for_each(begin(str),end(str),[&](char &cc) {
+	if(idx+len <= str.size() && !strncmp(&str[idx],c,len)) {
+	  if(nth > 0) {
+	    --nth;
+	    if(max) {
+	      pos = idx;
+	      *max = pos;
+	    }
+	  }
+	}
+	++idx;
+      });
+      return nth == 0 ? pos : size;
+    }
+    
+
+    template<>
+    inline size_t findNth<char>(std::string &str,char c,size_t nth,size_t *max) {
+      if(nth < 0) return str.size();
       size_t times = 0,last = 0;
       auto resIt = find_if(begin(str),end(str),[&](char &curr) ->bool {
 	if(c == curr) {
@@ -92,11 +135,31 @@ namespace oar {
 
 
     template<typename T>
-    inline size_t rfindNth(T t) {
+    inline size_t rfindNth(std::string &str,T t,size_t nth) {  
       return 0;
     }
     
+    template<>
+    inline size_t rfindNth(std::string &str,char c,size_t nth) {
+      if(nth <= 0) return str.size();
+      int pos = str.size() - 1;
+      int idx = pos;
+      //      printf("begin pos %d\n",pos);
+      for_each(rbegin(str),rend(str),[&](char &cc) {
+	if(cc == c) {
+	  if(nth > 0) {
+	    --nth;
+	    pos = idx;
+	    //    printf("current pos is %d , char is %c\n",pos,cc);
+	  }
+	}
+	--idx;
+      });
+      //      printf("pos is %d nth is %d\n",pos,nth);
+      return nth == 0 ? pos : str.size();
+    }
     
-  } // namespace strutil
+    
+    } // namespace strutil
 } // namespace oar
 #endif
