@@ -37,7 +37,7 @@ namespace oar {
     pthread_cond_t _cond;
   };
 
-  bool Condition::timedWait(double seconds) {
+  inline bool Condition::timedWait(double seconds) {
     struct timespec time;
     clock_gettime(CLOCK_REALTIME, &time);
     constexpr int64_t nanosecondsPerSecond = 1000000000;

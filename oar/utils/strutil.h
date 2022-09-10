@@ -133,14 +133,24 @@ namespace oar {
       return static_cast<size_t>(resIt-begin(str));
     }
 
+    
 
-    template<typename T>
-    inline size_t rfindNth(std::string &str,T t,size_t nth) {  
-      return 0;
+    template<typename T = std::string>
+    inline size_t rfindNth(std::string &str,T t,size_t nth) {
+      //      return _rfindNth(str,t,nth)
+      if(nth <= 0) return str.size();
+      size_t pos = std::string::npos;
+      while(nth--) {
+	pos = str.rfind(t,pos-1);
+	if(pos < 0 || pos > str.size()) {
+	  return str.size();
+	}	
+      }
+      return pos;
     }
     
     template<>
-    inline size_t rfindNth(std::string &str,char c,size_t nth) {
+    inline size_t rfindNth<char>(std::string &str,char c,size_t nth) {
       if(nth <= 0) return str.size();
       int pos = str.size() - 1;
       int idx = pos;
@@ -159,6 +169,20 @@ namespace oar {
       return nth == 0 ? pos : str.size();
     }
     
+    template<>
+    inline size_t rfindNth<const char*>(std::string &str,const char* c,size_t nth) {
+      if(nth <= 0) return str.size();
+      size_t pos = std::string::npos;
+      while (nth--) {
+	pos = str.rfind(c,pos-1);
+	if(pos < 0 || pos > str.size()) {
+	  return str.size();
+	}
+	//	printf("current pos is %d\n",pos);
+      }
+      return pos;
+    }
+
     
     } // namespace strutil
 } // namespace oar

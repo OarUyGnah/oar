@@ -73,7 +73,13 @@ int main() {
   cout << "strutil::rfindNth(s2, '3', 4) == " << strutil::rfindNth(s2, '3', 4) << endl;
   cout << "strutil::rfindNth(s2, '3', 0) == " << strutil::rfindNth(s2, '3', 0) << endl;
 
+  cout << "strutil::rfindNth(s2, \"3\", 2) == " << strutil::rfindNth(s2, "3", 2) << endl;
+  cout << "strutil::rfindNth(s2, \"654\", 1) == " << strutil::rfindNth(s2, "654", 1) << endl;
+  cout << "strutil::rfindNth(s2, \"5\", 2) == " << strutil::rfindNth(s2, "5", 2) << endl;
+  cout << "strutil::rfindNth(s2, \"654\", 2) == " << strutil::rfindNth(s2, "654", 2) << endl;
 
-
+  cout << "strutil::rfindNth(s2, string(\"654\"), 2) == " << strutil::rfindNth(s2, string("654"), 2) << endl;
+  cout << "strutil::rfindNth(s2, string(\"3\"), 2) == " << strutil::rfindNth(s2, string("3"), 2) << endl;
+  cout << "strutil::rfindNth(s2, string(\"123\"), 2) == " << strutil::rfindNth(s2, string("123"), 2) << endl;
   return 0;
 }

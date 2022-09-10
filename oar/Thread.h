@@ -37,19 +37,20 @@ namespace oar {
       //      printf("default\n");
       setDefaultName();
     }
-    /*
-      explicit Thread(threadFunc f,const std::string& name = std::string())
+    
+    /*    inline Thread(threadFunc f,const std::string& name = std::string())
       :_pthreadId(0),
-      _name(""),
-      _joined(false),
-      _started(false),
-      _tid(0)
-      {
+       _name(name),
+       _joined(false),
+       _started(false),
+       _tid(0),
+       _sem(0)
+    {
       printf("name\n");
-      }
-    */
+    }
+    */    
     template<typename Func,typename ...Args>
-    explicit Thread(Func &&f,Args && ...args);
+    inline Thread(Func &&f,Args && ...args);
 
     ~Thread();
     bool joinable() { return !_joined; }
@@ -107,6 +108,7 @@ namespace oar {
   template<typename Func,typename ...Args>
   bool Thread::setFunc(Func &&f,Args && ...args) {
     _func = std::bind(std::forward<Func>(f),std::forward<Args>(args)...);
+    return true;
   }
 
 

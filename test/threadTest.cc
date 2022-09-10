@@ -64,5 +64,9 @@ int main() {
   t5.start();
   t5.join();
 
+  Thread t6([](std::string&){printf("thread t6");},std::string("namet6"));
+  t6.start();
+  t6.join();
+  
   return 0;
 }

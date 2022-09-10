@@ -33,7 +33,7 @@ namespace oar {
     assert(_started);
     assert(!_joined);
     _joined = true;
-    printf("join...\n");
+    //    printf("join...\n");
     return pthread_join(_pthreadId,nullptr);
   }
 
