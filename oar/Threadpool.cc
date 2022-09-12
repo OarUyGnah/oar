@@ -3,7 +3,8 @@
 
 namespace oar {
 
-  Threadpool::Threadpool(int threadNums, const std::string name, Task task)
+  Threadpool::Threadpool(int threadNums, const std::string name,
+			 ThreadpoolInitCb task)
     :_threadNums(threadNums),
      _maxTaskSize(5),
      _name(name),
@@ -13,6 +14,7 @@ namespace oar {
      _threads(),
      _tasks(),
      _running(false),
+     _stopRunNewTask(false),
      _initCallBack(task)
   {
     
@@ -21,7 +23,8 @@ namespace oar {
   Threadpool::~Threadpool() {
     if (_running)
       stop();
-    
+
+    //printf("~~~~~~~~\n");
   }
 
   void Threadpool::start() {
@@ -33,7 +36,7 @@ namespace oar {
       _threads[i]->start();
     }
     if (_initCallBack)
-      _initCallBack();
+      _initCallBack(_name);
   }
 
   void Threadpool::stop() {
@@ -45,9 +48,24 @@ namespace oar {
     }
     everyThreadJoin();
   }
-
+  // 将当前任务队列的任务做完后结束
+  void Threadpool::stopRunNewTask() {
+    {
+      MutexGuard mg(_mutex);
+      _stopRunNewTask = true;
+      _notempty.broadcast();
+      _notfull.broadcast();
+      _running = false;
+    }
+    everyThreadJoin();
+    //    _running = false;
+  }
+  
   void Threadpool::runTask(Task task) {
     //    printf("Threadpool::runTask current tasks size is %d\n",taskQueuesize());
+    //    if (_stopRunTask)
+    //return;
+    assert(!_stopRunNewTask);
     if (_threads.empty())
       task();
     else {
@@ -77,14 +95,19 @@ namespace oar {
 
   void oar::Threadpool::loopInThread() {
     try {
-      if (_initCallBack)
-	_initCallBack();
+      // =======================TODO
+      // 这里应该调用Thread的initcallback
+      //if (_initCallBack)
+      //	_initCallBack();
 
-      // 如果此时调用stop() 则最后的任务可能无法执行，因此也要判断任务队列是否为空，如果不空则做完
-      while (_running || !_tasks.empty()) {
+      // 调用stop()直接停止
+      // 调用stopRunNewtask()则将已在队列的任务执行完再结束
+      // _running必须在后面，否则判断_running为false后则不会继续判断||后的东西，即使为true
+      while ((!_tasks.empty() && _stopRunNewTask) || _running) {
 	Task task = take();
 	if(task)
 	  task();
+	//	printf("empty = %d _stoprunnewtask = %d running = %d\n",_tasks.empty(),_stopRunNewTask,_running);
       }
     } catch (const Exception& e) {
       fprintf(stderr, "Exception caught in Threadpool %s\n", _name.c_str());

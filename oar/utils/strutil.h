@@ -7,9 +7,9 @@
 #include <algorithm>
 
 namespace oar {
-
+  
   namespace strutil {
-    
+    class strSlice;
     // 要加inline否则会有multiple definition的问题
     inline void _strSplit(std::string &str, std::vector<std::string> &v, std::string spacer) {
       int pos1, pos2;
@@ -183,6 +183,13 @@ namespace oar {
       return pos;
     }
 
+    class strSlice {
+    public:
+      
+
+    private:
+      
+    };
     
     } // namespace strutil
 } // namespace oar

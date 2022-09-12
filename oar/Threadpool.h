@@ -11,21 +11,22 @@
 #include <stdio.h>
 
 namespace oar {
-  inline void defaultThreadpoolInitCallBack() {
-    printf("defaultThreadpoolInitCallBack\n"); // test
+  inline void defaultThreadpoolInitCallBack(std::string &s) {
+    printf("Threadpool name:%s initialization completed\n",s.c_str()); // test
   }
   class Threadpool {
   public:
     using ThreadVec = std::vector<std::unique_ptr<oar::Thread>>;
     using Task = std::function<void()>;
     using TaskQueue = std::deque<Task>;
-
-    Threadpool(int threadNums, const std::string name = std::string("Threadpool"), Task task = defaultThreadpoolInitCallBack);
+    using ThreadpoolInitCb = std::function<void(std::string&)>;
+    Threadpool(int threadNums, const std::string name = std::string("Threadpool"), ThreadpoolInitCb task = defaultThreadpoolInitCallBack);
     //    Threadpool();
     ~Threadpool();
 
     void start();
     void stop();
+    void stopRunNewTask();
     void runTask(Task task);
 
     
@@ -50,8 +51,9 @@ namespace oar {
     ThreadVec _threads;
     TaskQueue _tasks;
     bool _running;
-    Task _initCallBack;
-
+    bool _stopRunNewTask;
+    std::function<void(std::string&)> _initCallBack;
+    
   };
   
 }
