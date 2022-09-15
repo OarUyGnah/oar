@@ -5,11 +5,13 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-
+#include <assert.h>
+#include <ostream>
+#include <stdio.h>
 namespace oar {
   
   namespace strutil {
-    class strSlice;
+    class Slice;
     // 要加inline否则会有multiple definition的问题
     inline void _strSplit(std::string &str, std::vector<std::string> &v, std::string spacer) {
       int pos1, pos2;
@@ -183,14 +185,86 @@ namespace oar {
       return pos;
     }
 
-    class strSlice {
+    class Slice {
     public:
-      
 
-    private:
+      friend std::ostream& operator<<(std::ostream& os,Slice& s);
       
+      Slice() : _ptr(nullptr),_len(0) {}
+      Slice(const char* p, int len) : _ptr(p),_len(len) {}
+      Slice(const char* p) : _ptr(p),_len(static_cast<size_t>(strlen(p))) {}
+      Slice(const std::string& s) : _ptr(s.data()),_len(s.size()) {}
+      Slice(const unsigned char* p) : _ptr(reinterpret_cast<const char*>(p)),_len(static_cast<size_t>(strlen(_ptr))) {}
+
+      const char* data() const { return _ptr; }
+      size_t size() const { return _len; }
+      bool empty() const { return _len == 0; }
+      const char* begin() const { return _ptr; }
+      const char* end() const { return _ptr + _len; }
+
+      void setDate(const std::string& str) {
+	_ptr = str.c_str();
+	_len = static_cast<size_t>(str.size());
+      }
+      void setData(const char* p) {
+	_ptr = p;
+	_len = static_cast<size_t>(strlen(p));
+      }
+      void setData(const char* p, size_t len) {
+	_ptr = p;
+	assert(strlen(p) == len);
+	_len = len;
+      }
+      void setData(const void* buf, size_t len) {
+	_ptr = reinterpret_cast<const char*>(buf);
+	_len = len;
+      }
+
+      void clear() {
+	_ptr = nullptr;
+	_len = 0;
+      }
+
+      char operator[](size_t pos) const {
+	return _ptr[pos];
+      }
+
+      void operator=(const std::string& str) {
+	_ptr = str.c_str();
+	_len = str.size();
+      }
+      void operator=(std::string&& str) {
+	_ptr = str.c_str();
+	_len = str.size();
+      }
+      
+      bool operator==(const Slice& slice) const {
+	return _len == slice.size() && (!memcmp(_ptr, slice.data(), _len));
+      }
+      
+      std::string toString() const {
+	return std::string(_ptr,_len);
+      }
+
+      void remove_prefix(size_t n) {
+	_ptr += n;
+	_len -= n;
+      }
+      void remove_suffix(size_t n) {
+	_len -= n;
+      }
+
+      
+    private:
+      const char *_ptr;
+      size_t _len;
     };
-    
-    } // namespace strutil
+
+    inline std::ostream& operator<<(std::ostream& os,Slice &s) {
+      os << s.toString();
+      return os;
+    }
+
+  } // namespace strutil
 } // namespace oar
 #endif
