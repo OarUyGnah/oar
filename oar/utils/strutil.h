@@ -185,6 +185,20 @@ namespace oar {
       return pos;
     }
 
+    inline void lowerCase(std::string& str) {
+      for (char &c : str) {
+	if (c >= 'A' && c <= 'Z')
+	  c += 32;
+      }
+    }
+    inline void upperCase(std::string& str) {
+      for (char &c : str) {
+	if (c >= 'a' && c <= 'z')
+	  c -= 32;
+      } 
+    }
+
+    
     class Slice {
     public:
 
