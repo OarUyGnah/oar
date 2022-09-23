@@ -42,5 +42,36 @@ namespace oar {
     return LogLevel::UNKNOWN;
 #undef JUDGE
   }
+
+  LogEvent::LogEvent(loggerPtr logger, logLevel level, const char* name,
+		     int32_t line, uint32_t elapse, uint32_t threadId,
+		     TimeStamp ts, const std::string& threadName)
+    :_filename(name),
+     _line(line),
+     _elapse(elapse),
+     _threadId(threadId),
+     _ts(ts),
+     _threadName(threadName),
+     _level(level),
+     _logger(logger)
+  {}
+
+
+  
+  void LogEvent::printlog(const char* fmt,...) {
+    va_list vl;
+    va_start(vl, fmt);
+    printlog(fmt, vl);
+    va_end(vl);
+  }
+  void LogEvent::printlog(const char* fmt,va_list vl) {
+    char* buf = NULL;
+    int len = 0;
+    if ((len = vasprintf(&buf, fmt, vl)) != -1) {
+      _ss << std::string(buf,len);
+      free(buf);
+    }
+  }
+
   
 }

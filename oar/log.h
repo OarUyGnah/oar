@@ -1,10 +1,16 @@
 #ifndef __OAR_LOG_H__
 #define __OAR_LOG_H__
 
+#include "./Time.h"
 #include <string>
+#include <memory>
+#include <sstream>
+#include <stdarg.h>
 
 namespace oar {
 
+  class Logger;
+  
   class LogLevel {
   public:
     enum Level {
@@ -27,6 +33,74 @@ namespace oar {
     static LogLevel::Level fromString(const std::string& str);
   };
 
+  class LogEvent {
+  public:
+    using eventPtr = std::shared_ptr<LogEvent> ;
+    using loggerPtr = std::shared_ptr<oar::Logger>;
+    using eventStream = std::stringstream;
+    using logLevel = LogLevel::Level;
+
+    LogEvent() = default;
+    LogEvent(loggerPtr logger, logLevel level, const char* name,
+	     int32_t line, uint32_t elapse, uint32_t threadId,
+	     TimeStamp ts, const std::string& threadName);
+    
+    const char* filename() const { return _filename; }
+    int32_t line() const { return _line; }
+    uint32_t elaspe() const { return _elapse; }
+    uint32_t threadId() const { return _threadId; }
+    const std::string& threadName() const { return _threadName; }
+    std::string content() const { return _ss.str(); }
+    loggerPtr logger() const { return _logger; }
+    eventStream& stream() { return _ss; }
+    LogLevel::Level level() const { return _level; }
+
+    // 格式化写入日志
+    void printlog(const char* fmt,...);
+    void printlog(const char* fmt,va_list vl);
+    
+    
+  private:
+    const char* _filename;
+    int32_t _line;
+    uint32_t _elapse; // 程序启动到现在的毫秒数
+    uint32_t _threadId;
+    TimeStamp _ts;
+    std::string _threadName;
+    eventStream _ss;
+    logLevel _level;
+    loggerPtr _logger;
+  };
+
+  class LogFormatter {
+  public:
+    using formatterPtr = std::shared_ptr<LogFormatter>;
+
+    class Item {
+    public:
+      using itemPtr = std::shared_ptr<Item>;
+      Item();
+      virtual ~Item() {}
+      virtual void format();
+    };
+
+    
+    LogFormatter(const std::string& pattern = "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n");
+
+    std::string format();
+    std::ostream& format();
+
+    void initFormatter();
+    
+    bool isError() const { return _error; }
+    
+    void setPattern(std::string pattern) { _pattern = pattern; }
+    const std::string& getPattern() const { return _pattern; }
+  private:
+    std::string _pattern;
+    
+    bool _error = false;
+  };
 }
 
 
