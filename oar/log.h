@@ -6,6 +6,7 @@
 #include <memory>
 #include <sstream>
 #include <stdarg.h>
+#include <vector>
 
 namespace oar {
 
@@ -54,7 +55,7 @@ namespace oar {
     loggerPtr logger() const { return _logger; }
     eventStream& stream() { return _ss; }
     LogLevel::Level level() const { return _level; }
-
+    TimeStamp& ts() const { return _ts; }
     // 格式化写入日志
     void printlog(const char* fmt,...);
     void printlog(const char* fmt,va_list vl);
@@ -75,13 +76,14 @@ namespace oar {
   class LogFormatter {
   public:
     using formatterPtr = std::shared_ptr<LogFormatter>;
-
+    using loggerPtr = std::shared_ptr<Logger>;
+    
     class Item {
     public:
       using itemPtr = std::shared_ptr<Item>;
       Item();
       virtual ~Item() {}
-      virtual void format();
+      virtual void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) = 0;
     };
 
     
@@ -98,7 +100,7 @@ namespace oar {
     const std::string& getPattern() const { return _pattern; }
   private:
     std::string _pattern;
-    
+    std::vector<Item::itemPtr> _items;
     bool _error = false;
   };
 }

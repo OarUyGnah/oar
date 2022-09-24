@@ -1,5 +1,7 @@
 #include "../oar/Time.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 using namespace oar;
 using namespace std;
@@ -37,6 +39,13 @@ int main() {
   cout << "sinceEpoch SECOND  " << time.sinceEpoch() << endl;
   cout << "sinceEpoch MILLSECOND  " << time.sinceEpoch(Time::MILLSECOND) << endl;
   cout << "sinceEpoch MICROSECOND  " << time.sinceEpoch(Time::MICROSECOND) << endl;
+  cout << "operator<< (Timestamp)" << endl;
   
+  ofstream ofs("./ostime.txt",ofstream::app);
+  stringstream ss;
+  //  cout << ts2 << endl;
+  ofs << ts2;
+  ss << ts2.totime_t();
+  cout << ss.str() << endl;
   return 0;
 }

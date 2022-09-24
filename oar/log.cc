@@ -73,5 +73,45 @@ namespace oar {
     }
   }
 
+
+
+  class MessageItem : public LogFormatter::Item {
+  public:
+    ~MessageItem() {
+
+    }
+    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+      os << event->content();
+    }
+  };
+
+  class LogLevelItem : public LogFormatter::Item {
+  public:
+    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+      os << LogLevel::toString(level);
+    }
+  };
+
+  class FilenameItem : public LogFormatter::Item {
+  public:
+    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+      os << event->filename();
+    }
+  };
+
+  class LineItem : public LogFormatter::Item {
+  public:
+    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+      os << event->line();
+    }
+  };
+
+  class TimeItem : public LogFormatter::Item {
+  public:
+    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+      os << event->ts();
+    }
+  };
+    
   
 }

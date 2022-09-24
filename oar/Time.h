@@ -5,6 +5,7 @@
 #include <chrono>
 #include <time.h>
 #include <string>
+#include <ostream>
 
 namespace oar {
 
@@ -118,6 +119,9 @@ namespace oar {
     int64_t _microSecondsSinceEpoch;
   };
 
+  inline std::ostream& operator<<(std::ostream& os, TimeStamp ts) {
+    os << ts.totime_t() << std::endl;
+  }
 }
 
 
