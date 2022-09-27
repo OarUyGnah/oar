@@ -105,13 +105,54 @@ namespace oar {
       os << event->line();
     }
   };
-
+  // TODO
   class TimeItem : public LogFormatter::Item {
   public:
     void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << event->ts();
     }
   };
+
+  class NewLineItem : public LogFormatter::Item {
+  public:
+    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+      os << std::endl;
+    }
+  };
+
+  class StringFmtItem : public LogFormatter::Item {
+  public:
+    StringFmtItem(const std::string& str) : _str(str) {}
     
+    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+      os << _str;
+    }
+  private:
+    std::string _str;
+  };
+
+  class TabItem : public LogFormatter::Item {
+  public:
+    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+      os << "\t";
+    }
+  };
+
+
+  void LogAppender::setFormatter(LogFormatter::formatterPtr fmt) {
+    SpinMutexGuard smg(_mutex);
+    _formatter = fmt;
+    if (_formatter) {
+      _hasFormatter = true;
+    } else
+      _hasFormatter = false;
+  }
+
+  LogFormatter::formatterPtr LogAppender::getFormatter() {
+    SpinMutexGuard smg(_mutex);
+    return _formatter;
+  }
+  
+  
   
 }

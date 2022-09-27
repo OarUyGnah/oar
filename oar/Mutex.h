@@ -87,6 +87,31 @@ namespace oar {
     
   };
 
+  class SpinMutex : Noncopyable {
+  public:
+    SpinMutex() {
+      pthread_spin_init(&_mutex, 0);
+    }
+    ~SpinMutex() {
+      pthread_spin_destroy(&_mutex);
+    }
+
+    void lock() {
+      pthread_spin_lock(&_mutex);
+    }
+
+    void trylock() {
+      pthread_spin_trylock(&_mutex);
+    }
+    
+    void unlock() {
+      pthread_spin_lock(&_mutex);
+    }
+    
+
+  private:
+    pthread_spinlock_t _mutex;
+  };
   
 
   /*
@@ -156,6 +181,19 @@ namespace oar {
     RWMutex& _wmutex;
      
   };
+
+  class SpinMutexGuard : Noncopyable {
+  public:
+    SpinMutexGuard(SpinMutex& sm) : _mutex(sm){
+      _mutex.lock();
+    }
+    ~SpinMutexGuard() {
+      _mutex.unlock();
+    }
+  private:
+    SpinMutex& _mutex;
+  };
+  
 }
 
 

@@ -1,7 +1,8 @@
 #ifndef __OAR_LOG_H__
 #define __OAR_LOG_H__
 
-#include "./Time.h"
+#include "Time.h"
+#include "Mutex.h"
 #include <string>
 #include <memory>
 #include <sstream>
@@ -102,6 +103,51 @@ namespace oar {
     std::string _pattern;
     std::vector<Item::itemPtr> _items;
     bool _error = false;
+  };
+
+  class LogAppender {
+  public:
+    using appendPtr = std::shared_ptr<LogAppender>;
+    using MutexType = SpinMutex;
+    
+    virtual ~LogAppender() {
+      
+    }
+
+    virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
+		     LogEvent::eventPtr event) = 0;
+    void setFormatter(LogFormatter::formatterPtr fmt);
+
+    LogFormatter::formatterPtr getFormatter();
+
+    LogLevel::Level level() const {
+      return _level;
+    }
+    void setLevel(LogLevel::Level level) {
+      _level = level;
+    }
+  protected:
+    LogLevel::Level _level = LogLevel::DEBUG;
+    MutexType _mutex;
+    LogFormatter::formatterPtr _formatter;
+    bool _hasFormatter = false;
+  };
+
+  class FileAppender : public LogAppender {
+  public:
+    using fileAppenderPtr = std::shared_ptr<FileAppender>;
+
+    FileAppender(std::string filename) : _filename(filename) {
+      
+    }
+
+    void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
+	     LogEvent::eventPtr event);
+    
+  private:
+    std::ofstream _ofs;
+    std::string _filename;
+    uint64_t _lastTime;
   };
 }
 
