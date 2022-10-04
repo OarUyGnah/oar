@@ -152,7 +152,28 @@ namespace oar {
     SpinMutexGuard smg(_mutex);
     return _formatter;
   }
+
+  void FileAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    if (level >= _level) {
+      uint64_t now = event->ts();
+      if (now >= (_lastTime + 3)) {
+	reopen();
+	_lastTime = now;
+      }
+      SpinMutexGuard smg(_mutex);
+      if (!_formatter->format(_ofs, logger, level, event)) {
+	std::cerr << "error FileAppender::log" << std::endl;
+      }
+    }
+  }
   
+  bool  FileAppender::reopen() {
+    SpinMutexGuard spg(_mutex);
+    if (_ofs) {
+      _ofs.close();
+    }
+    return FSUtil::openForWrite(_ofs, _filename, std::ios::app);
+  }
   
   
 }

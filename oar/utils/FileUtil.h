@@ -12,21 +12,22 @@ namespace oar {
 		     ,const std::string& path
 		     ,const std::string& subfix,
 		     int spaceNum = 0);
-    /*    static bool mkdir(const std::string& dirname);
-	  static bool isRunningPidfile(const std::string& pidfile);
-	  static bool rm(const std::string& path);
-	  static bool mv(const std::string& from, const std::string& to);
-	  static bool realpath(const std::string& path, std::string& rpath);
+    bool mkdir(const std::string& dirname);
+    bool unlink(const std::string& filename, bool exist = false);
+    bool rm(const std::string& path);
+    bool mv(const std::string& from, const std::string& to);
+    bool realPath(const std::string& path, std::string& rpath);
+    std::string dirName(const std::string& filename);
+    bool openForRead(std::ifstream& ifs, const std::string& filename
+		     ,std::ios_base::openmode mode);
+    bool openForWrite(std::ofstream& ofs, const std::string& filename);
+
+    /*	  static bool isRunningPidfile(const std::string& pidfile);
+
 	  static bool symlink(const std::string& frm, const std::string& to);
-	  static bool unlink(const std::string& filename, bool exist = false);
-	  static std::string dirName(const std::string& filename);
 	  static std::string baseName(const std::string& filename);
-	  static bool openForRead(std::ifstream& ifs, const std::string& filename
-	  ,std::ios_base::openmode mode);
-	  static bool openForWrite(std::ofstream& ofs, const std::string& filename
-	  ,std::ios_base::openmode mode);
     */
   }
-}
+      }
 
 #endif

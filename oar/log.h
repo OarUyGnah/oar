@@ -3,6 +3,7 @@
 
 #include "Time.h"
 #include "Mutex.h"
+#include "utils/FileUtil.h"
 #include <string>
 #include <memory>
 #include <sstream>
@@ -89,7 +90,8 @@ namespace oar {
 
     
     LogFormatter(const std::string& pattern = "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n");
-
+    void init();
+    
     std::string format();
     std::ostream& format();
 
@@ -143,12 +145,16 @@ namespace oar {
 
     void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
 	     LogEvent::eventPtr event);
+
+    bool reopen();
     
   private:
     std::ofstream _ofs;
     std::string _filename;
     uint64_t _lastTime;
   };
+
+  
 }
 
 
