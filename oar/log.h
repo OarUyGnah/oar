@@ -6,6 +6,7 @@
 #include "utils/FileUtil.h"
 #include <string>
 #include <memory>
+#include <fstream>
 #include <sstream>
 #include <stdarg.h>
 #include <vector>
@@ -57,7 +58,7 @@ namespace oar {
     loggerPtr logger() const { return _logger; }
     eventStream& stream() { return _ss; }
     LogLevel::Level level() const { return _level; }
-    TimeStamp& ts() const { return _ts; }
+    TimeStamp ts() const { return _ts; }
     // 格式化写入日志
     void printlog(const char* fmt,...);
     void printlog(const char* fmt,va_list vl);
@@ -92,8 +93,8 @@ namespace oar {
     LogFormatter(const std::string& pattern = "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n");
     void init();
     
-    std::string format();
-    std::ostream& format();
+    //std::string format();
+    //std::ostream& format();
 
     void initFormatter();
     
@@ -140,7 +141,7 @@ namespace oar {
     using fileAppenderPtr = std::shared_ptr<FileAppender>;
 
     FileAppender(std::string filename) : _filename(filename) {
-      
+      std::cout << "open test" << std::endl;
     }
 
     void log(std::shared_ptr<Logger> logger, LogLevel::Level level,

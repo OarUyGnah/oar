@@ -8,6 +8,6 @@ int main() {
 
   
   
-  FileAppender fa;
+  FileAppender fa("123");
   return 0;
 }

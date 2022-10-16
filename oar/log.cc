@@ -74,48 +74,56 @@ namespace oar {
   }
 
 
+  /*  std::string LogFormatter::format() {
+    return "";
+  }
 
+  std::ostream& LogFormatter::format() {
+    return std::cout;
+    }*/
+  
+  
   class MessageItem : public LogFormatter::Item {
   public:
     ~MessageItem() {
 
     }
-    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    void format(std::ostream& os, LogFormatter::loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << event->content();
     }
   };
 
   class LogLevelItem : public LogFormatter::Item {
   public:
-    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    void format(std::ostream& os, LogFormatter::loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << LogLevel::toString(level);
     }
   };
 
   class FilenameItem : public LogFormatter::Item {
   public:
-    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    void format(std::ostream& os, LogFormatter::loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << event->filename();
     }
   };
 
   class LineItem : public LogFormatter::Item {
   public:
-    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    void format(std::ostream& os, LogFormatter::loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << event->line();
     }
   };
   // TODO
   class TimeItem : public LogFormatter::Item {
   public:
-    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    void format(std::ostream& os, LogFormatter::loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << event->ts();
     }
   };
 
   class NewLineItem : public LogFormatter::Item {
   public:
-    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    void format(std::ostream& os, LogFormatter::loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << std::endl;
     }
   };
@@ -124,7 +132,7 @@ namespace oar {
   public:
     StringFmtItem(const std::string& str) : _str(str) {}
     
-    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    void format(std::ostream& os, LogFormatter::loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << _str;
     }
   private:
@@ -133,7 +141,7 @@ namespace oar {
 
   class TabItem : public LogFormatter::Item {
   public:
-    void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
+    void format(std::ostream& os, LogFormatter::loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) {
       os << "\t";
     }
   };
@@ -155,19 +163,20 @@ namespace oar {
 
   void FileAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::eventPtr event) {
     if (level >= _level) {
-      uint64_t now = event->ts();
+      uint64_t now = event->ts().getmicroEpoch();
       if (now >= (_lastTime + 3)) {
 	reopen();
 	_lastTime = now;
       }
       SpinMutexGuard smg(_mutex);
-      if (!_formatter->format(_ofs, logger, level, event)) {
+      /*      if (!_formatter->format(_ofs, logger, level, event)) {
 	std::cerr << "error FileAppender::log" << std::endl;
       }
+      */
     }
   }
   
-  bool  FileAppender::reopen() {
+  bool FileAppender::reopen() {
     SpinMutexGuard spg(_mutex);
     if (_ofs) {
       _ofs.close();

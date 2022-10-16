@@ -20,7 +20,8 @@ namespace oar {
     std::string dirName(const std::string& filename);
     bool openForRead(std::ifstream& ifs, const std::string& filename
 		     ,std::ios_base::openmode mode);
-    bool openForWrite(std::ofstream& ofs, const std::string& filename);
+    bool openForWrite(std::ofstream& ofs, const std::string& filename
+		      , std::ios_base::openmode mode);
 
     /*	  static bool isRunningPidfile(const std::string& pidfile);
 
