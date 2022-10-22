@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 /*
+  g++ threadTest.cc -L../oar -loar_base 
   g++ threadTest.cc ../oar/Thread.cc ../oar/ThisThread.cc ../oar/Semaphore.cc -lpthread
 */
 
