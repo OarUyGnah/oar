@@ -1,7 +1,0 @@
-/usr/local/lib/liboar_base.a
-/usr/local/include/oar/base/Thread.h
-/usr/local/include/oar/base/ThisThread.h
-/usr/local/include/oar/base/Threadpool.h
-/usr/local/include/oar/base/tools.h
-/usr/local/include/oar/base/Time.h
-/usr/local/include/oar/base/Semaphore.h

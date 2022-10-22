@@ -1,2 +1,0 @@
-/usr/bin/ar qc liboar_base.a CMakeFiles/oar_base.dir/Thread.o CMakeFiles/oar_base.dir/ThisThread.o CMakeFiles/oar_base.dir/Threadpool.o CMakeFiles/oar_base.dir/tools.o CMakeFiles/oar_base.dir/Time.o CMakeFiles/oar_base.dir/Semaphore.o
-/usr/bin/ranlib liboar_base.a
