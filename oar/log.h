@@ -1,162 +1,265 @@
-#ifndef __OAR_LOG_H__
-#define __OAR_LOG_H__
+// #ifndef __OAR_LOG_H__
+// #define __OAR_LOG_H__
 
-#include "Time.h"
 #include "Mutex.h"
+#include "Time.h"
 #include "utils/FileUtil.h"
-#include <string>
-#include <memory>
 #include <fstream>
+#include <functional>
+#include <map>
+#include <memory>
 #include <sstream>
 #include <stdarg.h>
+#include <string>
 #include <vector>
 
 namespace oar {
 
-  class Logger;
-  
-  class LogLevel {
-  public:
-    enum Level {
-      /// 未知级别
-      UNKNOWN = 0,
-      /// DEBUG 级别
-      DEBUG = 1,
-      /// INFO 级别
-      INFO = 2,
-      /// WARN 级别
-      WARN = 3,
-      /// ERROR 级别
-      ERROR = 4,
-      /// FATAL 级别
-      FATAL = 5
-    };
+class Logger;
+class LoggerManager;
 
-    static const char* toString(LogLevel::Level level);
-    
-    static LogLevel::Level fromString(const std::string& str);
+class LogLevel {
+public:
+  enum Level {
+    /// 未知级别
+    UNKNOWN = 0,
+    /// DEBUG 级别
+    DEBUG = 1,
+    /// INFO 级别
+    INFO = 2,
+    /// WARN 级别
+    WARN = 3,
+    /// ERROR 级别
+    ERROR = 4,
+    /// FATAL 级别
+    FATAL = 5
   };
 
-  class LogEvent {
-  public:
-    using eventPtr = std::shared_ptr<LogEvent> ;
-    using loggerPtr = std::shared_ptr<oar::Logger>;
-    using eventStream = std::stringstream;
-    using logLevel = LogLevel::Level;
+  static const char *toString(LogLevel::Level level);
 
-    LogEvent() = default;
-    LogEvent(loggerPtr logger, logLevel level, const char* name,
-	     int32_t line, uint32_t elapse, uint32_t threadId,
-	     TimeStamp ts, const std::string& threadName);
-    
-    const char* filename() const { return _filename; }
-    int32_t line() const { return _line; }
-    uint32_t elaspe() const { return _elapse; }
-    uint32_t threadId() const { return _threadId; }
-    const std::string& threadName() const { return _threadName; }
-    std::string content() const { return _ss.str(); }
-    loggerPtr logger() const { return _logger; }
-    eventStream& stream() { return _ss; }
-    LogLevel::Level level() const { return _level; }
-    TimeStamp ts() const { return _ts; }
-    // 格式化写入日志
-    void printlog(const char* fmt,...);
-    void printlog(const char* fmt,va_list vl);
-    
-    
-  private:
-    const char* _filename;
-    int32_t _line;
-    uint32_t _elapse; // 程序启动到现在的毫秒数
-    uint32_t _threadId;
-    TimeStamp _ts;
-    std::string _threadName;
-    eventStream _ss;
-    logLevel _level;
-    loggerPtr _logger;
+  static LogLevel::Level fromString(const std::string &str);
+};
+
+class LogEvent {
+public:
+  using eventPtr = std::shared_ptr<LogEvent>;
+  using loggerPtr = std::shared_ptr<Logger>;
+  using eventStream = std::stringstream;
+  using logLevel = LogLevel::Level;
+
+  LogEvent() = default;
+  LogEvent(loggerPtr logger, logLevel level, const char *name, int32_t line,
+           uint32_t elapse, uint32_t threadId, TimeStamp ts,
+           const std::string &threadName);
+
+  const char *filename() const { return _filename; }
+  int32_t line() const { return _line; }
+  uint32_t elaspe() const { return _elapse; }
+  uint32_t threadId() const { return _threadId; }
+  const std::string &threadName() const { return _threadName; }
+  std::string content() const { return _ss.str(); }
+  std::shared_ptr<Logger> logger() const { return _logger; }
+  eventStream &stream() { return _ss; }
+  LogLevel::Level level() const { return _level; }
+  TimeStamp ts() const { return _ts; }
+  // 格式化写入日志
+  void printlog(const char *fmt, ...);
+  void printlog(const char *fmt, va_list vl);
+
+private:
+  const char *_filename;   // 文件名
+  int32_t _line;           // 行号
+  uint32_t _elapse;        // 程序启动到现在的毫秒数
+  uint32_t _threadId;      // 线程id
+  TimeStamp _ts;           // 时间戳
+  std::string _threadName; // 线程名
+  eventStream _ss;         // 事件流
+  logLevel _level;         // 日志等级
+  loggerPtr _logger;       // 日志器
+};
+
+class LogFormatter {
+public:
+  using formatterPtr = std::shared_ptr<LogFormatter>;
+  using loggerPtr = std::shared_ptr<Logger>;
+
+  class Item {
+  public:
+    using itemPtr = std::shared_ptr<Item>;
+    Item() {}
+    virtual ~Item() {}
+    virtual void format(std::ostream &os, loggerPtr logger,
+                        LogLevel::Level level, LogEvent::eventPtr event) = 0;
   };
 
-  class LogFormatter {
-  public:
-    using formatterPtr = std::shared_ptr<LogFormatter>;
-    using loggerPtr = std::shared_ptr<Logger>;
-    
-    class Item {
-    public:
-      using itemPtr = std::shared_ptr<Item>;
-      Item();
-      virtual ~Item() {}
-      virtual void format(std::ostream& os, loggerPtr logger, LogLevel::Level level, LogEvent::eventPtr event) = 0;
-    };
+  LogFormatter(
+      const std::string &pattern =
+          "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%T[%p]%T[%c]%T%F:%l%T%m%n%o");
+  // void init();
 
-    
-    LogFormatter(const std::string& pattern = "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n");
-    void init();
-    
-    //std::string format();
-    //std::ostream& format();
+  std::string format(loggerPtr logger, LogLevel::Level level,
+                     LogEvent::eventPtr event);
+  std::ostream &format(std::ostream &ofs, loggerPtr logger,
+                       LogLevel::Level level, LogEvent::eventPtr event);
 
-    void initFormatter();
-    
-    bool isError() const { return _error; }
-    
-    void setPattern(std::string pattern) { _pattern = pattern; }
-    const std::string& getPattern() const { return _pattern; }
-  private:
-    std::string _pattern;
-    std::vector<Item::itemPtr> _items;
-    bool _error = false;
-  };
+  void initFormatter();
 
-  class LogAppender {
-  public:
-    using appendPtr = std::shared_ptr<LogAppender>;
-    using MutexType = SpinMutex;
-    
-    virtual ~LogAppender() {
-      
+  bool isError() const { return _error; }
+
+  void setPattern(std::string pattern) { _pattern = pattern; }
+  const std::string &getPattern() const { return _pattern; }
+
+  bool have(char c) {
+    for (auto cc : charset) {
+      if (cc == c) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
-		     LogEvent::eventPtr event) = 0;
-    void setFormatter(LogFormatter::formatterPtr fmt);
+private:
+  std::string _pattern;
+  std::vector<Item::itemPtr> _items;
+  bool _error = false;
 
-    LogFormatter::formatterPtr getFormatter();
-
-    LogLevel::Level level() const {
-      return _level;
-    }
-    void setLevel(LogLevel::Level level) {
-      _level = level;
-    }
-  protected:
-    LogLevel::Level _level = LogLevel::DEBUG;
-    MutexType _mutex;
-    LogFormatter::formatterPtr _formatter;
-    bool _hasFormatter = false;
-  };
-
-  class FileAppender : public LogAppender {
-  public:
-    using fileAppenderPtr = std::shared_ptr<FileAppender>;
-
-    FileAppender(std::string filename) : _filename(filename) {
-      std::cout << "open test" << std::endl;
-    }
-
-    void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
-	     LogEvent::eventPtr event);
-
-    bool reopen();
-    
-  private:
-    std::ofstream _ofs;
-    std::string _filename;
-    uint64_t _lastTime;
-  };
-
-  
-}
-
-
+public:
+#ifdef __cplusplus >= 201703
+  constexpr
 #endif
+      static char charset[] = {
+          'm', // 消息
+          'p', // 日志级别
+          'r', // 毫秒
+          'c', // 日志名称
+          'F', // 文件名称
+          't', // tab
+          'n', // 换行
+          'T', // 线程id
+          'l', // 行号
+          'N', // 线程名称
+          'd'  // 日期
+  };
+};
+
+class LogAppender {
+  friend class Logger;
+
+public:
+  using appendPtr = std::shared_ptr<LogAppender>;
+  using MutexType = SpinMutex;
+
+  virtual ~LogAppender() {}
+
+  virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
+                   LogEvent::eventPtr event) = 0;
+  void setFormatter(LogFormatter::formatterPtr fmt);
+
+  LogFormatter::formatterPtr getFormatter();
+
+  LogLevel::Level level() const { return _level; }
+  void setLevel(LogLevel::Level level) { _level = level; }
+
+protected:
+  LogLevel::Level _level = LogLevel::DEBUG;
+  MutexType _mutex;
+  LogFormatter::formatterPtr _formatter;
+  bool _hasFormatter = false;
+};
+
+class FileAppender : public LogAppender {
+public:
+  using fileAppenderPtr = std::shared_ptr<FileAppender>;
+
+  FileAppender(std::string filename) : _filename(filename) {
+    std::cout << "open test" << std::endl;
+  }
+
+  void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
+           LogEvent::eventPtr event);
+
+  bool reopen();
+
+private:
+  std::ofstream _ofs;
+  std::string _filename;
+  uint64_t _lastTime;
+};
+
+class StdoutAppender : public LogAppender {
+public:
+  using StdoutAppenderPtr = std::shared_ptr<StdoutAppender>;
+  StdoutAppender() = default;
+  void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
+           LogEvent::eventPtr event);
+};
+
+class Logger : public std::enable_shared_from_this<Logger> {
+  friend class LoggerManager;
+
+public:
+  using LoggerPtr = std::shared_ptr<Logger>;
+  Logger(const std::string &name = "root");
+
+  void log(LogLevel::Level level, LogEvent::eventPtr event);
+  void debug(LogEvent::eventPtr event);
+  void info(LogEvent::eventPtr event);
+  void warn(LogEvent::eventPtr event);
+  void error(LogEvent::eventPtr event);
+  void fatal(LogEvent::eventPtr event);
+
+  void addAppender(LogAppender::appendPtr appender);
+  void rmAppender(LogAppender::appendPtr appender);
+  void cleanAllAppender();
+
+  LogLevel::Level getLevel() const { return _level; }
+  void setLevel(LogLevel::Level level) { _level = level; }
+
+  const std::string &getName() const { return _name; }
+
+  void setFormatter(LogFormatter::formatterPtr formatter);
+  void setFormatter(const std::string &val);
+  LogFormatter::formatterPtr getFormatter() {
+    SpinMutexGuard smg(_mutex);
+    return _formatter;
+  }
+
+private:
+  std::string _name;
+  LogLevel::Level _level;
+  SpinMutex _mutex;
+  std::vector<LogAppender::appendPtr> _appenders;
+  LogFormatter::formatterPtr _formatter;
+  Logger::LoggerPtr _mainLogger; // 主日志器
+};
+
+class LoggerManager {
+  LoggerManager();
+  Logger::LoggerPtr getLogger();
+  Logger::LoggerPtr getMainLogger() { return _mainLogger; }
+  void init();
+
+private:
+  SpinMutex _mutex;
+  std::map<std::string, Logger::LoggerPtr> _loggers;
+  Logger::LoggerPtr _mainLogger;
+};
+
+class LogEventWrapper {
+public:
+  using wrapperPtr = std::shared_ptr<LogEventWrapper>;
+  LogEventWrapper(LogEvent::eventPtr event) : _event(event) {}
+
+  ~LogEventWrapper() { _event->logger()->log(_event->level(), _event); }
+
+  LogEvent::eventPtr getEvent() const { return _event; }
+
+  std::stringstream &getStream() { return _event->stream(); }
+
+private:
+  LogEvent::eventPtr _event;
+};
+
+} // namespace oar
+
+// #endif
