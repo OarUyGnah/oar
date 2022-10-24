@@ -1,11 +1,15 @@
 #include "log.h"
 #include "./utils/strutil.h"
+#include "Mutex.h"
+#include <algorithm>
 #include <bits/types/struct_tm.h>
 #include <cerrno>
+#include <cstddef>
 #include <ctime>
 #include <functional>
 #include <iostream>
 #include <map>
+#include <new>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -56,7 +60,7 @@ LogEvent::LogEvent(loggerPtr logger, logLevel level, const char *filename,
                    int32_t line, uint32_t elapse, uint32_t threadId,
                    TimeStamp ts, const std::string &threadName)
     : _filename(filename), _line(line), _elapse(elapse), _threadId(threadId),
-      _ts(ts), _threadName(threadName), _level(level), _logger(logger) {}
+      _ts(ts), _threadName(threadName), _ss(), _level(level), _logger(logger) {}
 
 void LogEvent::printlog(const char *fmt, ...) {
   va_list vl;
@@ -73,7 +77,8 @@ void LogEvent::printlog(const char *fmt, va_list vl) {
   }
 }
 
-LogFormatter::LogFormatter(const std::string &pattern) : _pattern(pattern) {
+LogFormatter::LogFormatter(const std::string &pattern, bool isError)
+    : _pattern(pattern), _error(isError) {
   initFormatter();
 }
 
@@ -212,11 +217,11 @@ void LogFormatter::initFormatter() {
   //     'N', // 线程名称
   //     'd'  // 日期
   // };
-  std::cout << _pattern << std::endl;
+  // std::cout << _pattern << std::endl;
   using pos_t = size_t;
   // bool 是否正确 char 字符  pos_t字符位置 std::string args
   std::vector<std::tuple<bool, char, pos_t, std::string>> vec;
-  std::cout << _pattern.size() << std::endl;
+  // std::cout << _pattern.size() << std::endl;
   for (int i = 0; i < _pattern.size(); ++i) {
     if (_pattern[i] == '%') {
       i++;
@@ -249,13 +254,16 @@ void LogFormatter::initFormatter() {
             i += pos;
           } else {
             vec.emplace_back(false, _pattern[i], i, "");
+            _error = true;
           }
         } else {
           vec.emplace_back(false, _pattern[i], i, "");
+          _error = true;
         }
         break;
       default:
         vec.emplace_back(false, _pattern[i], i, "");
+        _error = true;
         break;
       }
     }
@@ -280,10 +288,11 @@ void LogFormatter::initFormatter() {
           XX('d', TimeItem),       // d:日期时间
 #undef XX
       };
-  for (auto &tuple : vec) {
-    std::cout << std::get<0>(tuple) << " " << std::get<1>(tuple) << " "
-              << std::get<2>(tuple) << " " << std::get<3>(tuple) << std::endl;
-  }
+  // for (auto &tuple : vec) {
+  //   std::cout << std::get<0>(tuple) << " " << std::get<1>(tuple) << " "
+  //             << std::get<2>(tuple) << " " << std::get<3>(tuple) <<
+  //             std::endl;
+  // }
   for (auto &tuple : vec) {
     if (std::get<0>(tuple)) {
       auto it = items_map.find(std::get<1>(tuple));
@@ -301,10 +310,10 @@ void LogFormatter::initFormatter() {
           "<<error_format %" + std::string(std::get<1>(tuple), 1) + ">>")));
     }
   }
-  int times = 0;
-  for (auto &i : _items) {
-    std::cout << ++times << std::endl;
-  }
+  // int times = 0;
+  // for (auto &i : _items) {
+  //   std::cout << ++times << std::endl;
+  // }
 }
 
 // void LogFormatter::initFormatter() {
@@ -473,5 +482,88 @@ void StdoutAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level,
   }
 }
 
-void Logger::log(LogLevel::Level level, LogEvent::eventPtr event) {}
+Logger::Logger(const std::string &name)
+    : _name(name), _level(LogLevel::DEBUG), _formatter(new LogFormatter),
+      _mainLogger() {}
+
+void Logger::log(LogLevel::Level level, LogEvent::eventPtr event) {
+  if (level >= _level) {
+    auto self = shared_from_this();
+    SpinMutexGuard smg(_mutex);
+    if (!_appenders.empty()) {
+      for (auto &appender : _appenders) {
+        appender->log(self, level, event);
+      }
+    } else {
+      // TODO
+      if (_mainLogger == nullptr) {
+        std::cout << "_mainlogger == nullptr" << std::endl;
+      }
+      _mainLogger->log(level, event);
+    }
+  }
+}
+void Logger::debug(LogEvent::eventPtr event) { log(LogLevel::DEBUG, event); }
+void Logger::info(LogEvent::eventPtr event) { log(LogLevel::INFO, event); }
+void Logger::warn(LogEvent::eventPtr event) { log(LogLevel::WARN, event); }
+void Logger::error(LogEvent::eventPtr event) { log(LogLevel::ERROR, event); }
+void Logger::fatal(LogEvent::eventPtr event) { log(LogLevel::FATAL, event); }
+
+void Logger::addAppender(LogAppender::appendPtr appender) {
+  SpinMutexGuard smg(_mutex);
+  // 如果添加的appender没有formatter，就用Logger的
+  if (!appender->getFormatter()) {
+    SpinMutexGuard smgInner(appender->_mutex);
+    appender->_formatter = _formatter;
+  }
+  _appenders.push_back(appender);
+}
+void Logger::rmAppender(LogAppender::appendPtr appender) {
+  SpinMutexGuard smg(_mutex);
+  _appenders.erase(std::remove_if(
+      _appenders.begin(), _appenders.end(),
+      [&](LogAppender::appendPtr &ptr) { return ptr == appender; }));
+}
+void Logger::cleanAllAppender() {
+  SpinMutexGuard smg(_mutex);
+  _appenders.clear();
+}
+
+void Logger::setFormatter(LogFormatter::formatterPtr formatter) {
+  SpinMutexGuard smg(_mutex);
+  for (auto &appender : _appenders) {
+    if (!appender->_hasFormatter) {
+      appender->setFormatter(formatter);
+    }
+  }
+  _formatter = formatter;
+}
+void Logger::setFormatter(const std::string &val) {
+  LogFormatter::formatterPtr newVal(new LogFormatter(val));
+  if (newVal->isError()) {
+    std::cerr << "Logger setFormatter name=" << _name << " value=" << val
+              << " invalid formatter" << std::endl;
+    return;
+  }
+  setFormatter(newVal);
+}
+
+LoggerManager::LoggerManager() {
+  _mainLogger.reset(new Logger);
+  _mainLogger->addAppender(LogAppender::appendPtr(new StdoutAppender));
+  _loggers.insert({_mainLogger->getName(), _mainLogger});
+}
+
+Logger::LoggerPtr LoggerManager::getLogger(const std::string &name) {
+  auto it = _loggers.find(name);
+  if (it != _loggers.end()) {
+    return it->second;
+  } else {
+    Logger::LoggerPtr ret(new Logger(name));
+    ret->_mainLogger = _mainLogger;
+    _loggers.insert({name, ret});
+    return ret;
+  }
+}
+
 } // namespace oar

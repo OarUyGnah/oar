@@ -6,12 +6,16 @@
 #include "utils/FileUtil.h"
 #include <fstream>
 #include <functional>
+#include <list>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <stdarg.h>
 #include <string>
 #include <vector>
+
+#define __FILENAME__                                                           \
+  (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 namespace oar {
 
@@ -92,9 +96,9 @@ public:
                         LogLevel::Level level, LogEvent::eventPtr event) = 0;
   };
 
-  LogFormatter(
-      const std::string &pattern =
-          "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%T[%p]%T[%c]%T%F:%l%T%m%n%o");
+  LogFormatter(const std::string &pattern =
+                   "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%T[%p]%T[%c]%T%F:%l%T%m%n",
+               bool isError = false);
   // void init();
 
   std::string format(loggerPtr logger, LogLevel::Level level,
@@ -124,7 +128,7 @@ private:
   bool _error = false;
 
 public:
-#ifdef __cplusplus >= 201703
+#ifdef __cplusplus &&__cplusplus >= 201703
   constexpr
 #endif
       static char charset[] = {
@@ -199,7 +203,7 @@ class Logger : public std::enable_shared_from_this<Logger> {
 
 public:
   using LoggerPtr = std::shared_ptr<Logger>;
-  Logger(const std::string &name = "root");
+  Logger(const std::string &name = "mainLogger");
 
   void log(LogLevel::Level level, LogEvent::eventPtr event);
   void debug(LogEvent::eventPtr event);
@@ -228,16 +232,16 @@ private:
   std::string _name;
   LogLevel::Level _level;
   SpinMutex _mutex;
-  std::vector<LogAppender::appendPtr> _appenders;
+  std::list<LogAppender::appendPtr> _appenders;
   LogFormatter::formatterPtr _formatter;
   Logger::LoggerPtr _mainLogger; // 主日志器
 };
 
 class LoggerManager {
   LoggerManager();
-  Logger::LoggerPtr getLogger();
+  Logger::LoggerPtr getLogger(const std::string &name);
   Logger::LoggerPtr getMainLogger() { return _mainLogger; }
-  void init();
+  void init() {}
 
 private:
   SpinMutex _mutex;
@@ -250,7 +254,13 @@ public:
   using wrapperPtr = std::shared_ptr<LogEventWrapper>;
   LogEventWrapper(LogEvent::eventPtr event) : _event(event) {}
 
-  ~LogEventWrapper() { _event->logger()->log(_event->level(), _event); }
+  ~LogEventWrapper() {
+    auto logger = _event->logger();
+    // TODO 此处loggerptr为nullptr
+    logger->log(_event->level(), _event);
+  }
+
+  // void writelog() { _event->logger()->log(_event->level(), _event); }
 
   LogEvent::eventPtr getEvent() const { return _event; }
 
