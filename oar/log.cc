@@ -133,7 +133,7 @@ public:
   LineItem(const std::string &str = "") {}
   void format(std::ostream &os, LogFormatter::loggerPtr logger,
               LogLevel::Level level, LogEvent::eventPtr event) {
-    os << event->line();
+    os << "Line " << event->line();
   }
 };
 // TODO
@@ -203,6 +203,32 @@ public:
   }
 };
 
+class ColonItem : public LogFormatter::Item {
+public:
+  ColonItem(const std::string &str = "") {}
+  void format(std::ostream &os, LogFormatter::loggerPtr logger,
+              LogLevel::Level level, LogEvent::eventPtr event) {
+    os << ":";
+  }
+};
+
+class LCurlyBracketItem : public LogFormatter::Item {
+public:
+  LCurlyBracketItem(const std::string &str = "") {}
+  void format(std::ostream &os, LogFormatter::loggerPtr logger,
+              LogLevel::Level level, LogEvent::eventPtr event) {
+    os << "[";
+  }
+};
+
+class RCurlyBracketItem : public LogFormatter::Item {
+public:
+  RCurlyBracketItem(const std::string &str = "") {}
+  void format(std::ostream &os, LogFormatter::loggerPtr logger,
+              LogLevel::Level level, LogEvent::eventPtr event) {
+    os << "]";
+  }
+};
 void LogFormatter::initFormatter() {
   // static char[] charset = {
   //     'm', // 消息
@@ -261,9 +287,25 @@ void LogFormatter::initFormatter() {
           _error = true;
         }
         break;
+
       default:
         vec.emplace_back(false, _pattern[i], i, "");
         _error = true;
+        break;
+      }
+    } else {
+      switch (_pattern[i]) {
+      case ':':
+        std::cout << ":" << std::endl;
+        vec.emplace_back(true, _pattern[i], i, "");
+        break;
+      case '[':
+        vec.emplace_back(true, _pattern[i], i, "");
+        break;
+      case ']':
+        vec.emplace_back(true, _pattern[i], i, "");
+        break;
+      default:
         break;
       }
     }
@@ -286,6 +328,8 @@ void LogFormatter::initFormatter() {
           XX('l', LineItem),       // l:行号
           XX('N', ThreadNameItem), // N:线程名
           XX('d', TimeItem),       // d:日期时间
+          XX(':', ColonItem),        XX('[', LCurlyBracketItem),
+          XX(']', RCurlyBracketItem)
 #undef XX
       };
   // for (auto &tuple : vec) {
@@ -310,10 +354,10 @@ void LogFormatter::initFormatter() {
           "<<error_format %" + std::string(std::get<1>(tuple), 1) + ">>")));
     }
   }
-  // int times = 0;
-  // for (auto &i : _items) {
-  //   std::cout << ++times << std::endl;
-  // }
+  int times = 0;
+  for (auto &i : _items) {
+    std::cout << ++times << std::endl;
+  }
 }
 
 // void LogFormatter::initFormatter() {
@@ -439,7 +483,7 @@ std::ostream &LogFormatter::format(std::ostream &ofs, loggerPtr logger,
 }
 
 void LogAppender::setFormatter(LogFormatter::formatterPtr fmt) {
-  SpinMutexGuard smg(_mutex);
+  MutexGuard mg(_mutex);
   _formatter = fmt;
   if (_formatter) {
     _hasFormatter = true;
@@ -448,7 +492,7 @@ void LogAppender::setFormatter(LogFormatter::formatterPtr fmt) {
 }
 
 LogFormatter::formatterPtr LogAppender::getFormatter() {
-  SpinMutexGuard smg(_mutex);
+  MutexGuard mg(_mutex);
   return _formatter;
 }
 
@@ -460,7 +504,7 @@ void FileAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level,
       reopen();
       _lastTime = now;
     }
-    SpinMutexGuard smg(_mutex);
+    MutexGuard mg(_mutex);
     if (!_formatter->format(_ofs, logger, level, event)) {
       std::cerr << "error FileAppender::log" << std::endl;
     }
@@ -468,7 +512,7 @@ void FileAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level,
 }
 
 bool FileAppender::reopen() {
-  SpinMutexGuard spg(_mutex);
+  MutexGuard mg(_mutex);
   if (_ofs) {
     _ofs.close();
   }
@@ -483,24 +527,25 @@ void StdoutAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level,
 }
 
 Logger::Logger(const std::string &name)
-    : _name(name), _level(LogLevel::DEBUG), _formatter(new LogFormatter),
-      _mainLogger() {}
+    : _name(name), _level(LogLevel::DEBUG),
+      _formatter(LogFormatter::formatterPtr(new LogFormatter)), _mainLogger() {}
 
 void Logger::log(LogLevel::Level level, LogEvent::eventPtr event) {
   if (level >= _level) {
     auto self = shared_from_this();
-    SpinMutexGuard smg(_mutex);
+    MutexGuard mg(_mutex);
     if (!_appenders.empty()) {
       for (auto &appender : _appenders) {
         appender->log(self, level, event);
       }
-    } else {
+    } else if (_mainLogger) {
       // TODO
-      if (_mainLogger == nullptr) {
-        std::cout << "_mainlogger == nullptr" << std::endl;
-      }
+      // if (_mainLogger == nullptr) {
+      //   std::cout << "_mainlogger == nullptr" << std::endl;
+      // }
       _mainLogger->log(level, event);
     }
+    // std::cout << "end Logger::log" << std::endl;
   }
 }
 void Logger::debug(LogEvent::eventPtr event) { log(LogLevel::DEBUG, event); }
@@ -510,27 +555,27 @@ void Logger::error(LogEvent::eventPtr event) { log(LogLevel::ERROR, event); }
 void Logger::fatal(LogEvent::eventPtr event) { log(LogLevel::FATAL, event); }
 
 void Logger::addAppender(LogAppender::appendPtr appender) {
-  SpinMutexGuard smg(_mutex);
+  MutexGuard mg(_mutex);
   // 如果添加的appender没有formatter，就用Logger的
   if (!appender->getFormatter()) {
-    SpinMutexGuard smgInner(appender->_mutex);
+    // MutexGuard mgInner(appender->_mutex);
     appender->_formatter = _formatter;
   }
   _appenders.push_back(appender);
 }
 void Logger::rmAppender(LogAppender::appendPtr appender) {
-  SpinMutexGuard smg(_mutex);
+  MutexGuard mg(_mutex);
   _appenders.erase(std::remove_if(
       _appenders.begin(), _appenders.end(),
       [&](LogAppender::appendPtr &ptr) { return ptr == appender; }));
 }
 void Logger::cleanAllAppender() {
-  SpinMutexGuard smg(_mutex);
+  MutexGuard mg(_mutex);
   _appenders.clear();
 }
 
 void Logger::setFormatter(LogFormatter::formatterPtr formatter) {
-  SpinMutexGuard smg(_mutex);
+  MutexGuard smg(_mutex);
   for (auto &appender : _appenders) {
     if (!appender->_hasFormatter) {
       appender->setFormatter(formatter);

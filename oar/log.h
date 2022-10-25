@@ -2,6 +2,7 @@
 // #define __OAR_LOG_H__
 
 #include "Mutex.h"
+#include "Singleton.h"
 #include "Time.h"
 #include "utils/FileUtil.h"
 #include <fstream>
@@ -13,7 +14,6 @@
 #include <stdarg.h>
 #include <string>
 #include <vector>
-
 #define __FILENAME__                                                           \
   (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
@@ -97,7 +97,7 @@ public:
   };
 
   LogFormatter(const std::string &pattern =
-                   "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%T[%p]%T[%c]%T%F:%l%T%m%n",
+                   "%d{%Y-%m-%d %H:%M:%S}%T%t%N%t[%p]%t[%c]%t%F:%l%t%m%n",
                bool isError = false);
   // void init();
 
@@ -151,12 +151,12 @@ class LogAppender {
 
 public:
   using appendPtr = std::shared_ptr<LogAppender>;
-  using MutexType = SpinMutex;
+  using MutexType = Mutex;
 
   virtual ~LogAppender() {}
 
   virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
-                   LogEvent::eventPtr event) = 0;
+                   LogEvent::eventPtr event) {}
   void setFormatter(LogFormatter::formatterPtr fmt);
 
   LogFormatter::formatterPtr getFormatter();
@@ -193,7 +193,7 @@ private:
 class StdoutAppender : public LogAppender {
 public:
   using StdoutAppenderPtr = std::shared_ptr<StdoutAppender>;
-  StdoutAppender() = default;
+  // StdoutAppender() = default;
   void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
            LogEvent::eventPtr event);
 };
@@ -204,7 +204,7 @@ class Logger : public std::enable_shared_from_this<Logger> {
 public:
   using LoggerPtr = std::shared_ptr<Logger>;
   Logger(const std::string &name = "mainLogger");
-
+  void init() { _mainLogger = shared_from_this(); }
   void log(LogLevel::Level level, LogEvent::eventPtr event);
   void debug(LogEvent::eventPtr event);
   void info(LogEvent::eventPtr event);
@@ -224,27 +224,34 @@ public:
   void setFormatter(LogFormatter::formatterPtr formatter);
   void setFormatter(const std::string &val);
   LogFormatter::formatterPtr getFormatter() {
-    SpinMutexGuard smg(_mutex);
+    MutexGuard mg(_mutex);
     return _formatter;
   }
 
 private:
   std::string _name;
   LogLevel::Level _level;
-  SpinMutex _mutex;
+  Mutex _mutex;
   std::list<LogAppender::appendPtr> _appenders;
   LogFormatter::formatterPtr _formatter;
   Logger::LoggerPtr _mainLogger; // 主日志器
 };
 
 class LoggerManager {
+public:
   LoggerManager();
   Logger::LoggerPtr getLogger(const std::string &name);
   Logger::LoggerPtr getMainLogger() { return _mainLogger; }
-  void init() {}
+  void init() {
+    // _mainLogger.reset(new Logger);
+    // _mainLogger->init();
+    // _mainLogger->addAppender(LogAppender::appendPtr(new StdoutAppender));
+    // //_mainLogger->addAppender(std::make_shared<StdoutAppender>());
+    // _loggers.insert({_mainLogger->getName(), _mainLogger});
+  }
 
 private:
-  SpinMutex _mutex;
+  Mutex _mutex;
   std::map<std::string, Logger::LoggerPtr> _loggers;
   Logger::LoggerPtr _mainLogger;
 };
@@ -269,6 +276,8 @@ public:
 private:
   LogEvent::eventPtr _event;
 };
+
+using LoggerMgr = oar::SingletonPtr<oar::LoggerManager>;
 
 } // namespace oar
 
