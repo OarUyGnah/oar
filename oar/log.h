@@ -14,8 +14,23 @@
 #include <stdarg.h>
 #include <string>
 #include <vector>
+
 #define __FILENAME__                                                           \
   (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
+#define LOG_LEVEL(logger, level)                                               \
+  if (logger->getLevel() <= level)                                             \
+  oar::LogEventWrapper(                                                        \
+      LogEvent::eventPtr(new LogEvent(logger, LogLevel::DEBUG, __FILENAME__,   \
+                                      __LINE__, 0, ThisThread::tid(),          \
+                                      TimeStamp(), ThisThread::threadName)))   \
+      .getStream()
+
+#define LOG_DEBUG(logger) LOG_LEVEL(logger, oar::LogLevel::DEBUG)
+#define LOG_INFO(logger) LOG_LEVEL(logger, oar::LogLevel::INFO)
+#define LOG_WARN(logger) LOG_LEVEL(logger, oar::LogLevel::WARN)
+#define LOG_ERROR(logger) LOG_LEVEL(logger, oar::LogLevel::ERROR)
+#define LOG_FATAL(logger) LOG_LEVEL(logger, oar::LogLevel::FATAL)
 
 namespace oar {
 
@@ -97,7 +112,7 @@ public:
   };
 
   LogFormatter(const std::string &pattern =
-                   "%d{%Y-%m-%d %H:%M:%S}%T%t%N%t[%p]%t[%c]%t%F:%l%t%m%n",
+                   "[%p]%t%d{%Y-%m-%d %H:%M:%S} [%T:%N] [%c]%t%F : %l%t%m%n",
                bool isError = false);
   // void init();
 
@@ -242,6 +257,7 @@ public:
   LoggerManager();
   Logger::LoggerPtr getLogger(const std::string &name);
   Logger::LoggerPtr getMainLogger() { return _mainLogger; }
+  bool insert(const std::string &name, Logger::LoggerPtr ptr);
   void init() {
     // _mainLogger.reset(new Logger);
     // _mainLogger->init();

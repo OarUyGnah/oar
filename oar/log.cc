@@ -60,7 +60,9 @@ LogEvent::LogEvent(loggerPtr logger, logLevel level, const char *filename,
                    int32_t line, uint32_t elapse, uint32_t threadId,
                    TimeStamp ts, const std::string &threadName)
     : _filename(filename), _line(line), _elapse(elapse), _threadId(threadId),
-      _ts(ts), _threadName(threadName), _ss(), _level(level), _logger(logger) {}
+      _ts(ts), _threadName(threadName), _ss(), _level(level), _logger(logger) {
+  // std::cout << "threadid == " << this->threadId() << std::endl;
+}
 
 void LogEvent::printlog(const char *fmt, ...) {
   va_list vl;
@@ -108,17 +110,17 @@ public:
     os << event->elaspe();
   }
 };
-
-class LogFileNameItem : public LogFormatter::Item {
+// 日志器名
+class LoggerNameItem : public LogFormatter::Item {
 public:
-  LogFileNameItem(const std::string &str = "") {}
+  LoggerNameItem(const std::string &str = "") {}
   void format(std::ostream &os, LogFormatter::loggerPtr logger,
               LogLevel::Level level, LogEvent::eventPtr event) {
     os << event->logger()->getName();
   }
 };
 
-// 文件名 不是日志文件名
+// 文件名
 class FilenameItem : public LogFormatter::Item {
 public:
   FilenameItem(const std::string &str = "") {}
@@ -212,30 +214,40 @@ public:
   }
 };
 
-class LCurlyBracketItem : public LogFormatter::Item {
+class LSquareBracketItem : public LogFormatter::Item {
 public:
-  LCurlyBracketItem(const std::string &str = "") {}
+  LSquareBracketItem(const std::string &str = "") {}
   void format(std::ostream &os, LogFormatter::loggerPtr logger,
               LogLevel::Level level, LogEvent::eventPtr event) {
     os << "[";
   }
 };
 
-class RCurlyBracketItem : public LogFormatter::Item {
+class RSquareBracketItem : public LogFormatter::Item {
 public:
-  RCurlyBracketItem(const std::string &str = "") {}
+  RSquareBracketItem(const std::string &str = "") {}
   void format(std::ostream &os, LogFormatter::loggerPtr logger,
               LogLevel::Level level, LogEvent::eventPtr event) {
     os << "]";
   }
 };
+
+class SpaceItem : public LogFormatter::Item {
+public:
+  SpaceItem(const std::string &str = "") {}
+  void format(std::ostream &os, LogFormatter::loggerPtr logger,
+              LogLevel::Level level, LogEvent::eventPtr event) {
+    os << " ";
+  }
+};
+
 void LogFormatter::initFormatter() {
   // static char[] charset = {
   //     'm', // 消息
   //     'p', // 日志级别
   //     'r', // 毫秒
-  //     'c', // 日志名称
-  //     'F', // 文件名称
+  //     'c', // 日志器名
+  //     'F', // 文件名
   //     't', // tab
   //     'n', // 换行
   //     'T', // 线程id
@@ -305,6 +317,9 @@ void LogFormatter::initFormatter() {
       case ']':
         vec.emplace_back(true, _pattern[i], i, "");
         break;
+      case ' ':
+        vec.emplace_back(true, _pattern[i], i, "");
+        break;
       default:
         break;
       }
@@ -317,19 +332,21 @@ void LogFormatter::initFormatter() {
     str, [](const std::string &fmt) { return Item::itemPtr(new C(fmt)); }      \
   }
 
-          XX('m', MessageItem),    // m:消息
-          XX('p', LogLevelItem),   // p:日志级别
-          XX('r', ElaspeItem),     // r:累计毫秒数
-          XX('c', FilenameItem),   // c:日志名称
-          XX('F', FilenameItem),   // f:文件名
-          XX('t', TabItem),        // t:tab
-          XX('n', NewLineItem),    // n:换行
-          XX('T', TabItem),        // T:线程id
-          XX('l', LineItem),       // l:行号
-          XX('N', ThreadNameItem), // N:线程名
-          XX('d', TimeItem),       // d:日期时间
-          XX(':', ColonItem),        XX('[', LCurlyBracketItem),
-          XX(']', RCurlyBracketItem)
+          XX('m', MessageItem),        // m:消息
+          XX('p', LogLevelItem),       // p:日志级别
+          XX('r', ElaspeItem),         // r:累计毫秒数
+          XX('c', LoggerNameItem),     // c:日志器名
+          XX('F', FilenameItem),       // f:文件名
+          XX('t', TabItem),            // t:tab
+          XX('n', NewLineItem),        // n:换行
+          XX('T', ThreadIdItem),       // T:线程id
+          XX('l', LineItem),           // l:行号
+          XX('N', ThreadNameItem),     // N:线程名
+          XX('d', TimeItem),           // d:日期时间
+          XX(':', ColonItem),          // 冒号
+          XX('[', LSquareBracketItem), // 左方括号
+          XX(']', RSquareBracketItem), // 右方括号
+          XX(' ', SpaceItem)           // 空格
 #undef XX
       };
   // for (auto &tuple : vec) {
@@ -597,6 +614,10 @@ LoggerManager::LoggerManager() {
   _mainLogger.reset(new Logger);
   _mainLogger->addAppender(LogAppender::appendPtr(new StdoutAppender));
   _loggers.insert({_mainLogger->getName(), _mainLogger});
+}
+
+bool LoggerManager::insert(const std::string &name, Logger::LoggerPtr ptr) {
+  return _loggers.insert({name, ptr}).second;
 }
 
 Logger::LoggerPtr LoggerManager::getLogger(const std::string &name) {

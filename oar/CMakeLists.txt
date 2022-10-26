@@ -7,9 +7,9 @@ set(OAR_SRCS
   Semaphore.cc
   log.cc
   utils/FileUtil.cc
-  )
+)
 add_library(oar_base ${OAR_SRCS})
-target_link_libraries(oar_base pthread rt)
+target_link_libraries(oar_base pthread)
 
 install(TARGETS oar_base DESTINATION lib)
 
@@ -22,5 +22,5 @@ set(OAR_HEADERS
   Semaphore.h
   log.h
   utils/FileUtil.h
-  )
+)
 install(FILES ${OAR_HEADERS} DESTINATION include/oar/base)
