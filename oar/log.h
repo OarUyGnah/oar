@@ -21,9 +21,9 @@
 #define LOG_LEVEL(logger, level)                                               \
   if (logger->getLevel() <= level)                                             \
   oar::LogEventWrapper(                                                        \
-      LogEvent::eventPtr(new LogEvent(logger, LogLevel::DEBUG, __FILENAME__,   \
-                                      __LINE__, 0, ThisThread::tid(),          \
-                                      TimeStamp(), ThisThread::threadName)))   \
+      LogEvent::eventPtr(new LogEvent(logger, level, __FILENAME__, __LINE__,   \
+                                      0, ThisThread::tid(), TimeStamp(),       \
+                                      ThisThread::threadName)))                \
       .getStream()
 
 #define LOG_DEBUG(logger) LOG_LEVEL(logger, oar::LogLevel::DEBUG)
@@ -32,6 +32,25 @@
 #define LOG_ERROR(logger) LOG_LEVEL(logger, oar::LogLevel::ERROR)
 #define LOG_FATAL(logger) LOG_LEVEL(logger, oar::LogLevel::FATAL)
 
+#define LOG_FORMAT(logger, level, format, ...)                                 \
+  if (logger->getLevel() <= level)                                             \
+  oar::LogEventWrapper(                                                        \
+      LogEvent::eventPtr(new LogEvent(logger, level, __FILENAME__, __LINE__,   \
+                                      0, ThisThread::tid(), TimeStamp(),       \
+                                      ThisThread::threadName)))                \
+      .getEvent()                                                              \
+      ->printlog(format, __VA_ARGS__)
+
+#define LOG_FORMAT_DEBUG(logger, format, ...)                                  \
+  LOG_FORMAT(logger, oar::LogLevel::DEBUG, format, __VA_ARGS__)
+#define LOG_FORMAT_INFO(logger, format, ...)                                   \
+  LOG_FORMAT(logger, oar::LogLevel::INFO, format, __VA_ARGS__)
+#define LOG_FORMAT_WARN(logger, format, ...)                                   \
+  LOG_FORMAT(logger, oar::LogLevel::WARN, format, __VA_ARGS__)
+#define LOG_FORMAT_ERROR(logger, format, ...)                                  \
+  LOG_FORMAT(logger, oar::LogLevel::ERROR, format, __VA_ARGS__)
+#define LOG_FORMAT_FATAL(logger, format, ...)                                  \
+  LOG_FORMAT(logger, oar::LogLevel::FATAL, format, __VA_ARGS__)
 namespace oar {
 
 class Logger;
@@ -261,7 +280,8 @@ public:
   void init() {
     // _mainLogger.reset(new Logger);
     // _mainLogger->init();
-    // _mainLogger->addAppender(LogAppender::appendPtr(new StdoutAppender));
+    // _mainLogger->addAppender(LogAppender::appendPtr(new
+    // StdoutAppender));
     // //_mainLogger->addAppender(std::make_shared<StdoutAppender>());
     // _loggers.insert({_mainLogger->getName(), _mainLogger});
   }
@@ -293,8 +313,7 @@ private:
   LogEvent::eventPtr _event;
 };
 
-using LoggerMgr = oar::SingletonPtr<oar::LoggerManager>;
-
+extern oar::SingletonPtr<oar::LoggerManager> LoggerMgr;
 } // namespace oar
 
 // #endif
