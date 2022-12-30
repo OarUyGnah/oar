@@ -9,7 +9,7 @@ namespace oar {
     copyable() = default;
     ~copyable() = default;
 
-  }
+  };
 
 }
 
