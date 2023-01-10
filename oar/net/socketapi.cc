@@ -3,9 +3,10 @@
 #include "../log.h"
 #include "socketapi.h"
 #include <arpa/inet.h>
-#include <cstdio>
+#include <cstdarg>
 #include <cstdlib>
 #include <netinet/in.h>
+#include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -37,8 +38,9 @@ void bind(int sockfd, const struct sockaddr* addr)
     }
 }
 
-void listen(int sockfd) {
-    if(::listen(sockfd, SOMAXCONN) < 0) {
+void listen(int sockfd)
+{
+    if (::listen(sockfd, SOMAXCONN) < 0) {
         unix_error("oar::listen error");
     }
 }
@@ -160,9 +162,15 @@ ssize_t write(int sockfd, const void* buf, size_t count)
     return ::write(sockfd, buf, count);
 }
 
-void unix_error(const char* msg)
+void unix_error(const char* msg, ...)
 {
-    fprintf(stderr, "%s\n", msg);
+    char* buf;
+    va_list vl;
+    va_start(vl, msg);
+    if (vasprintf(&buf, msg, vl) != -1) {
+        fprintf(stderr, "%s\n", buf);
+        va_end(vl);
+    }
     exit(0);
 }
 }

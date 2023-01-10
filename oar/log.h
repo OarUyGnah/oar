@@ -31,6 +31,7 @@
 #define LOG_WARN(logger) LOG_LEVEL(logger, oar::LogLevel::WARN)
 #define LOG_ERROR(logger) LOG_LEVEL(logger, oar::LogLevel::ERROR)
 #define LOG_FATAL(logger) LOG_LEVEL(logger, oar::LogLevel::FATAL)
+#define LOG_SYSERR
 
 #define LOG_FORMAT(logger, level, format, ...)                                 \
   if (logger->getLevel() <= level)                                             \

@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <sys/socket.h>
-
+#include <iostream>
 namespace oar {
 InetAddress::InetAddress(std::string ip, uint16_t port)
 {
@@ -14,6 +14,15 @@ InetAddress::InetAddress(std::string ip, uint16_t port)
 InetAddress::InetAddress(const sockaddr_in& addr)
     : _addr(addr)
 {
+}
+
+InetAddress::InetAddress(const InetAddress& addr)
+{
+    _addr = *addr.addrPtr();
+}
+InetAddress::InetAddress(InetAddress&& addr)
+{
+    _addr = std::move(*addr.addrPtr());
 }
 
 sa_family_t InetAddress::family() const
@@ -30,13 +39,24 @@ int InetAddress::port() const
 {
     return ntoh(_addr.sin_port);
 }
-const sockaddr_in* InetAddress::addrPtr() const
+const struct sockaddr_in* InetAddress::addrPtr() const
 {
     return &_addr;
 }
 
-void InetAddress::setaddr(const sockaddr_in &addr) 
+void InetAddress::setaddr(const sockaddr_in& addr)
 {
     _addr = addr;
+}
+
+InetAddress& InetAddress::operator=(const InetAddress& addr)
+{
+    _addr = *addr.addrPtr();
+    return *this;
+}
+InetAddress& InetAddress::operator=(InetAddress&& addr)
+{
+    _addr = std::move(*addr.addrPtr());
+    return *this;
 }
 }

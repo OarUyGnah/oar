@@ -7,8 +7,11 @@
 #include <wchar.h>
 
 namespace oar {
-Socket::Socket()
+Socket::Socket() : _fd(oar::socket(PF_INET))
 {
+    if (_fd == -1) {
+        unix_error("Socket::Socket error");
+    }
 }
 
 Socket::Socket(uint16_t fd)
@@ -21,6 +24,11 @@ Socket::~Socket()
     oar::close(_fd);
 }
 
+void Socket::set_nonblocking() {
+    oar::set_nonblocking(_fd);
+}
+
+
 void Socket::bind(const InetAddress& addr)
 {
     oar::bind(_fd, (sockaddr*)(addr.addrPtr()));
@@ -31,12 +39,12 @@ void Socket::listen()
     oar::listen(_fd);
 }
 
-int Socket::accept(InetAddress* peer)
+int Socket::accept(InetAddress& peer)
 {
     sockaddr_in addr {};
     int connfd;
     if ((connfd = oar::accept(_fd, &addr)) >= 0) {
-        peer->setaddr(addr);
+        peer.setaddr(addr);
     }
     return connfd;
 }

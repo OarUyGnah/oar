@@ -15,16 +15,17 @@ public:
     Socket();
     Socket(uint16_t fd);
     ~Socket();
-    uint16_t fd() const { return _fd; }
+    int fd() const { return _fd; }
     void set_nonblocking();
     void bind(const InetAddress& addr);
     void listen();
-    int accept(InetAddress *peer);
+    int accept(InetAddress& peer);
     void shutdownWR();
     void reuseaddr(bool on);
     void reuseport(bool on);
+
 private:
-    uint16_t _fd;
+    int _fd;
 };
 }
 
