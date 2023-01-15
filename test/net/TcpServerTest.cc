@@ -2,6 +2,7 @@
 #include "oar/net/EventLoop.h"
 #include <iostream>
 #include <oar/StringBuffer.h>
+#include <oar/net/InetAddress.h>
 #include <oar/net/Socket.h>
 #include <oar/net/TcpConnection.h>
 using namespace oar;

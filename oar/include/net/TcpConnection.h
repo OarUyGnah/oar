@@ -35,8 +35,8 @@ public:
 
     void read();
     void write();
-    const InetAddress& addr() { return *_addr; }
-    void setPeerAddr(const InetAddress& addr) { *_addr = addr; }
+    const InetAddress& addr() { return _addr; }
+    void setPeerAddr(const InetAddress& addr) { _addr = addr; }
 
 private:
     void blockingRead();
@@ -48,7 +48,7 @@ private:
     EventLoop* _loop;
     Channel* _ch;
     Socket* _sock;
-    InetAddress* _addr;
+    InetAddress _addr;
     DeleteConnectionCallback _delete_cb;
     OnConnectionCallback _on_connect_cb;
     State _state;

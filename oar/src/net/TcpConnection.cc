@@ -21,7 +21,7 @@ TcpConnection::TcpConnection(EventLoop* loop, Socket* sock)
     : _loop(loop)
     , _ch(nullptr)
     , _sock(sock)
-    , _addr(new InetAddress())
+    // , _addr(new InetAddress())
     , _state(Connected)
     , _rd_buf(new StringBuffer)
     , _wr_buf(new StringBuffer)
@@ -39,7 +39,7 @@ TcpConnection::~TcpConnection()
     delete _ch;
     delete _sock;
     delete _wr_buf;
-    delete _addr;
+    // delete _addr;
 }
 
 void TcpConnection::setDeleteConnectionCallback(DeleteConnectionCallback cb)
