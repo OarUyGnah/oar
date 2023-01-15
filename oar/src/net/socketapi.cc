@@ -125,8 +125,8 @@ void close(int sockfd)
 void setaddr(const char* ip, uint16_t port, sockaddr_in& addr)
 {
     addr.sin_port = hton(port);
-    std::cout << "port is " << port << std::endl;
-    std::cout << "hton(port) is " << hton(port) << std::endl;
+    // std::cout << "port is " << port << std::endl;
+    // std::cout << "hton(port) is " << hton(port) << std::endl;
 
     addr.sin_family = AF_INET;
     if (::inet_pton(AF_INET, ip, &addr.sin_addr) <= 0) {

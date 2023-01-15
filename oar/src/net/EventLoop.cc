@@ -1,30 +1,30 @@
-#include "oar/net/EventLoop.h"
-#include "oar/net/Channel.h"
+#include "net/EventLoop.h"
+#include "net/Channel.h"
+#include "net/Poller.h"
 #include <algorithm>
 #include <cstdio>
 #include <sys/epoll.h>
 #include <vector>
-
 namespace oar {
 
 EventLoop::EventLoop()
-    : _epoll(new Epoll())
-    , _quit(false)
+    : _poller(new Poller)
+    , _stop(false)
 {
 }
 
 EventLoop::~EventLoop()
 {
-    delete _epoll;
+    stop();
+    delete _poller;
 }
 
 void EventLoop::loop()
 {
     std::vector<Channel*> channels;
-    while (!_quit) {
-        channels = _epoll->poll();
+    while (!_stop) {
+        channels = _poller->poll();
         for (Channel* ch : channels) {
-            // printf("fd %d\n", ch->fd());
             ch->processEvent();
         }
     }
@@ -32,6 +32,16 @@ void EventLoop::loop()
 
 void EventLoop::updateChannel(Channel* ch)
 {
-    _epoll->updateChannel(ch);
+    _poller->updateChannel(ch);
+}
+
+void EventLoop::removeChannel(Channel* ch)
+{
+    _poller->removeChannel(ch);
+}
+
+void EventLoop::stop()
+{
+    _stop = true;
 }
 }

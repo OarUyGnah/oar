@@ -32,10 +32,11 @@ public:
     StringBuffer* readBuffer() const { return _rd_buf; }
     StringBuffer* writeBuffer() const { return _wr_buf; }
     Socket* socket() const { return _sock; }
-    void echo(int fd);
 
     void read();
     void write();
+    const InetAddress& addr() { return *_addr; }
+    void setPeerAddr(const InetAddress& addr) { *_addr = addr; }
 
 private:
     void blockingRead();

@@ -1,4 +1,4 @@
-#include "oar/net/InetAddress.h"
+#include "net/InetAddress.h"
 #include "oar/Endian.h"
 #include "oar/net/socketapi.h"
 #include <arpa/inet.h>
@@ -43,8 +43,17 @@ const struct sockaddr_in* InetAddress::addrPtr() const
 {
     return &_addr;
 }
+// struct sockaddr_in* InetAddress::addrPtr()
+// {
+//     return &_addr;
+// }
 
 void InetAddress::setaddr(const sockaddr_in& addr)
+{
+    _addr = addr;
+}
+
+void InetAddress::setaddr(sockaddr_in&& addr)
 {
     _addr = addr;
 }

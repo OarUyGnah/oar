@@ -30,7 +30,7 @@ TcpConnection::TcpConnection(EventLoop* loop, Socket* sock)
     _sock->set_nonblocking();
     _ch = new Channel(_loop, _sock->fd());
     // _ch->setCallback(std::bind(&TcpConnection::echo, this, _sock->fd()));
-    printf("TcpConnection::TcpConnection client_addr : %s:%d\n", _addr->ip().c_str(), _addr->port());
+    // printf("TcpConnection::TcpConnection client_addr : %s:%d\n", _addr->ip().c_str(), _addr->port());
     _ch->enableReading();
 }
 
@@ -39,6 +39,7 @@ TcpConnection::~TcpConnection()
     delete _ch;
     delete _sock;
     delete _wr_buf;
+    delete _addr;
 }
 
 void TcpConnection::setDeleteConnectionCallback(DeleteConnectionCallback cb)
@@ -49,44 +50,6 @@ void TcpConnection::setOnConnectCallback(OnConnectionCallback cb)
 {
     _on_connect_cb = cb;
     _ch->setReadCallback([this]() { _on_connect_cb(this); });
-}
-
-void TcpConnection::echo(int fd)
-{
-    // int times = 0;
-    char buf[1024];
-    while (true) {
-        bzero(buf, sizeof(buf));
-        auto read_bytes = oar::read(fd, buf, sizeof(buf) + 1);
-        // printf("times = %d\n", ++times);
-        if (read_bytes > 0) {
-            // printf("message from %s:%d : %s", _addr->ip().c_str(), _addr->port(), buf);
-            // printf("read bytes is %d\n", read_bytes);
-            // printf("message from %s %d : %s", _addr->ip().c_str(), _addr->port(), buf);
-
-            _wr_buf->append(buf, sizeof buf);
-            // printf("_buf.size() = %d\n", _buf->readableBytes());
-        } else if (read_bytes == -1 && errno == EINTR) {
-            printf("continue reading");
-            continue;
-        } else if (read_bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            printf("message from -1 %s %d : %s", _addr->ip().c_str(), _addr->port(), _wr_buf->begin());
-
-            // oar::write(fd, _buf->begin(), _buf->size());
-            oar::write(fd, _wr_buf->begin(), _wr_buf->readableBytes());
-            _wr_buf->retrieveAll();
-            _wr_buf->clear();
-            break;
-        } else if (read_bytes == 0) {
-            printf("EOF, client fd %d disconnected\n", fd);
-            _delete_cb(_sock);
-            break;
-        } else {
-            printf("Connection reset by peer\n");
-            _delete_cb(_sock);
-            break;
-        }
-    }
 }
 
 void TcpConnection::close()
@@ -138,7 +101,7 @@ void TcpConnection::nonblockingRead()
     int fd = _sock->fd();
     ssize_t rd_bytes = 0;
     char buf[1024];
-    printf("TcpConnection::nonblockingRead\n");
+    // printf("TcpConnection::nonblockingRead\n");
     while (true) {
         bzero(buf, sizeof(buf));
         rd_bytes = oar::read(fd, buf, sizeof(buf));

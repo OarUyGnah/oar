@@ -21,7 +21,7 @@ public:
     ~TcpServer();
 
     // void processReadEvent(int sock);
-    void newConnection(Socket* sock);
+    void newConnection(Socket* sock, InetAddress* addr);
     void deleteConncetion(Socket* sock);
     void setOnConnectCallback(ConnectCallBack cb);
 

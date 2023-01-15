@@ -1,5 +1,5 @@
-#include "oar/net/TcpServer.h"
-#include "oar/net/Acceptor.h"
+#include "net/TcpServer.h"
+#include "net/Acceptor.h"
 #include "oar/net/Channel.h"
 #include "oar/net/Epoll.h"
 #include "oar/net/EventLoop.h"
@@ -28,7 +28,7 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& addr, const std::string
     , _accpetor(new Acceptor(_mainloop, addr))
     , _threadpool(new Threadpool(std::thread::hardware_concurrency() / 2))
 {
-    _accpetor->setNewConnectionCallback(std::bind(&TcpServer::newConnection, this, std::placeholders::_1));
+    _accpetor->setNewConnectionCallback(std::bind(&TcpServer::newConnection, this, std::placeholders::_1, std::placeholders::_2));
     // Socket* server_sock = new Socket();
     // InetAddress server_addr = addr;
     // printf("server_addr ip:%s port:%d\n",server_addr.ip().c_str(),server_addr.port());
@@ -56,7 +56,7 @@ TcpServer::~TcpServer()
     delete _threadpool;
 }
 
-void TcpServer::newConnection(Socket* sock)
+void TcpServer::newConnection(Socket* sock, InetAddress* addr)
 {
     // InetAddress newaddr {};  // error!
     // InetAddress *newaddr = new InetAddress();
@@ -72,6 +72,7 @@ void TcpServer::newConnection(Socket* sock)
     // TcpConnection* conn = new TcpConnection(_mainloop, sock);
     conn->setDeleteConnectionCallback(std::bind(&TcpServer::deleteConncetion, this, std::placeholders::_1));
     conn->setOnConnectCallback(_on_connect_cb);
+    conn->setPeerAddr(*addr);
     _conns[sock->fd()] = conn;
 }
 
@@ -79,12 +80,14 @@ void TcpServer::deleteConncetion(Socket* sock)
 {
     if (sock->fd() == -1)
         return;
-    auto it = _conns.find(sock->fd());
+    int fd = sock->fd();
+    auto it = _conns.find(fd);
     if (it != _conns.end()) {
-        TcpConnection* del = _conns[sock->fd()];
-        _conns.erase(sock->fd());
+        TcpConnection* del = _conns[fd];
+        _conns.erase(fd);
         delete del;
-        oar::close(sock->fd()); // 没有则段错误
+        _accpetor->deleteSock(fd);
+        // oar::close(sock->fd()); // 有则error
     }
 }
 

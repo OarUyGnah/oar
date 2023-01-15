@@ -1,4 +1,4 @@
-#include "oar/net/Channel.h"
+#include "net/Channel.h"
 
 #include <cstdio>
 #include <sys/epoll.h>
@@ -38,7 +38,7 @@ void Channel::processEvent()
     }
 }
 
-void Channel::ET(bool on)
+void Channel::etMode(bool on)
 {
     if (on)
         _events |= EPOLLET;

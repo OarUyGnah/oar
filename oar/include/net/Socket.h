@@ -24,9 +24,13 @@ public:
     void shutdownWR();
     void reuseaddr(bool on);
     void reuseport(bool on);
+    // void setInetAddress(const InetAddress& addr) { *_addr = addr; }
+    // const InetAddress* sockaddr() const { return _addr; }
+    // const InetAddress* sockaddr() const { return _addr; }
 
 private:
     int _fd;
+    // InetAddress* _addr;
 };
 }
 

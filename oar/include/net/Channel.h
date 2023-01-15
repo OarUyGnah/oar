@@ -15,6 +15,13 @@ public:
     // using EventCallback = std::function<void()>;
     using ReadCallback = std::function<void()>;
     using WriteCallback = std::function<void()>;
+
+    enum EVENT {
+        RD = 1,
+        WR = 4,
+        ET = 1u << 31
+    };
+
     Channel(EventLoop* loop, int fd);
     ~Channel();
     int fd() const { return _fd; }
@@ -27,11 +34,20 @@ public:
 
     void enableReading();
     void processEvent();
-    void ET(bool on);
+    void etMode(bool on);
 
-    void setReadCallback(ReadCallback cb) { _rd_cb = cb; }
+    void setReadCallback(ReadCallback cb)
+    {
+        _rd_cb = cb;
+    }
     void setWriteCallback(WriteCallback cb) { _wr_cb = cb; }
 
+#ifdef OS_LINUX
+    bool isET()
+    {
+        return _events & EPOLLET;
+    }
+#endif
 private:
     bool _inpoll;
     int _fd;

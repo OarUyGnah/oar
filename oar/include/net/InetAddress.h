@@ -21,8 +21,9 @@ public:
     std::string ip() const;
     int port() const;
     const struct sockaddr_in* addrPtr() const;
+    // struct sockaddr_in* addrPtr();
     void setaddr(const sockaddr_in& addr);
-
+    void setaddr(sockaddr_in&& addr);
     InetAddress& operator=(const InetAddress& addr);
     InetAddress& operator=(InetAddress&& addr);
 

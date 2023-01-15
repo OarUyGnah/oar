@@ -18,8 +18,14 @@ int main()
             conn->close();
             return;
         }
-        std::cout << "Message from client " << conn->socket()->fd() << " : "
+        // std::cout << &conn->addr() << std::endl;
+        std::cout << "Message from client " << conn->socket()->fd() << " ["
+                  << conn->addr().ip().c_str() << ":" << conn->addr().port() << "] : "
                   << conn->readBuffer()->rBegin();
+        // std::cout << "sock " << conn->socket()->sockaddr() << std::endl;
+        // std::cout << "Message from client " << conn->socket()->fd() << " : "
+        //           //   << conn->socket()->sockaddr()->ip() << ":" << conn->socket()->sockaddr()->port() << "] : "
+        //           << conn->readBuffer()->rBegin();
         conn->readBuffer()->clear();
     });
     loop->loop();

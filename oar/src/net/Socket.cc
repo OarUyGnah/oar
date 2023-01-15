@@ -1,5 +1,5 @@
-#include "oar/net/Socket.h"
-#include "oar/net/InetAddress.h"
+#include "net/Socket.h"
+#include "net/InetAddress.h"
 #include "oar/net/socketapi.h"
 #include <asm-generic/socket.h>
 #include <netinet/in.h>
@@ -9,6 +9,7 @@
 namespace oar {
 Socket::Socket()
     : _fd(oar::socket(PF_INET))
+// , _addr(new InetAddress)
 {
     if (_fd == -1) {
         unix_error("Socket::Socket error");
@@ -17,12 +18,14 @@ Socket::Socket()
 
 Socket::Socket(uint16_t fd)
     : _fd(fd)
+// , _addr(new InetAddress)
 {
 }
 
 Socket::~Socket()
 {
     oar::close(_fd);
+    // delete _addr;
 }
 
 void Socket::set_nonblocking()
@@ -32,7 +35,8 @@ void Socket::set_nonblocking()
 
 void Socket::bind(const InetAddress& addr)
 {
-    oar::bind(_fd, (sockaddr*)(addr.addrPtr()));
+    oar::bind(_fd, (struct sockaddr*)(addr.addrPtr()));
+    // _addr->setaddr(*addr.addrPtr());
 }
 
 void Socket::listen()
@@ -46,7 +50,10 @@ int Socket::accept(InetAddress& peer)
     int connfd;
     if ((connfd = oar::accept(_fd, &addr)) >= 0) {
         peer.setaddr(addr);
+    } else {
+        unix_error("Socket::accept error, errno is %d", errno);
     }
+    // _addr->setaddr(addr);
     return connfd;
 }
 
