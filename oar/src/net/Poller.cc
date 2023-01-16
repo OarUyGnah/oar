@@ -2,8 +2,10 @@
 #include "net/Channel.h"
 #include "net/socketapi.h"
 #include <errno.h>
+#include <memory>
 #include <stdio.h>
 #include <strings.h>
+#include <sys/epoll.h>
 
 namespace oar {
 #ifdef OS_LINUX
@@ -79,22 +81,11 @@ std::vector<Channel*> Poller::poll(int timeout)
     if (nfds == -1) {
         unix_error("Epoll::poll error");
     }
-    std::vector<oar::Channel*> channels;
+    std::vector<Channel*> channels;
     for (int i = 0; i < nfds; ++i) {
         Channel* c = static_cast<Channel*>(_events[i].data.ptr);
         auto events = _events[i].events;
-        if (events & EPOLLIN) {
-            // printf("EPOLLIN\n");
-            c->setRevents(Channel::EVENT::RD);
-        }
-        if (events & EPOLLOUT) {
-            // printf("EPOLLOUT\n");
-            c->setRevents(Channel::EVENT::WR);
-        }
-        if (events & EPOLLET) {
-            // printf("EPOLLET\n");
-            c->setRevents(Channel::EVENT::ET);
-        }
+        c->setRevents(events);
         channels.emplace_back(c);
     }
     return channels;

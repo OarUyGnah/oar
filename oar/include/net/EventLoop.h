@@ -2,6 +2,7 @@
 #define __OAR_EVENTLOOP_H__
 
 // #include "net/Epoll.h"
+#include <memory>
 namespace oar {
 class Channel;
 class Poller;
@@ -17,8 +18,8 @@ public:
     void stop();
 
 private:
-    // Epoll* _poller;
-    Poller* _poller;
+    // Poller* _poller;
+    std::unique_ptr<Poller> _poller;
     bool _stop;
 };
 

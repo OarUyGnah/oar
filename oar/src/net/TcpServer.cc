@@ -13,6 +13,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <functional>
+#include <memory>
 #include <string>
 #include <strings.h>
 #include <thread>
@@ -25,7 +26,7 @@ namespace oar {
 
 TcpServer::TcpServer(EventLoop* loop, const InetAddress& addr, const std::string& name)
     : _mainloop(loop)
-    , _accpetor(new Acceptor(_mainloop, addr))
+    , _accpetor(new Acceptor(loop, addr))
     , _threadpool(new Threadpool(std::thread::hardware_concurrency() / 2))
 {
     _accpetor->setNewConnectionCallback(std::bind(&TcpServer::newConnection, this, std::placeholders::_1, std::placeholders::_2));
@@ -41,7 +42,7 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& addr, const std::string
     // server_channel->enableReading();
 
     for (int i = 0; i < std::thread::hardware_concurrency() / 2; ++i) {
-        _subloops.push_back(new EventLoop);
+        _subloops.emplace_back(new EventLoop);
     }
     _threadpool->start();
     for (int i = 0; i < std::thread::hardware_concurrency() / 2; ++i) {
@@ -52,47 +53,47 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& addr, const std::string
 
 TcpServer::~TcpServer()
 {
-    delete _accpetor;
-    delete _threadpool;
+    // delete _accpetor;
+    // delete _threadpool;
 }
 
 void TcpServer::newConnection(Socket* sock, InetAddress* addr)
 {
-    // InetAddress newaddr {};  // error!
-    // InetAddress *newaddr = new InetAddress();
-    // Socket *newsock = new Socket(sock->accept(*newaddr));
-    // newsock->set_nonblocking();
-    // printf("newsock %d\n",newsock->fd());
-    // Channel *client_channel =  new Channel(_loop,newsock->fd());
-    // std::function<void()> cb = std::bind(&TcpServer::processReadEvent,this, newsock->fd());
-    // client_channel->setCallback(cb);
-    // client_channel->enableReading();
-    // printf("new connection! client channel : %d\n",client_channel->fd());
-    TcpConnection* conn = new TcpConnection(_subloops[sock->fd() % _subloops.size()], sock);
-    // TcpConnection* conn = new TcpConnection(_mainloop, sock);
+    std::unique_ptr<TcpConnection> conn = std::make_unique<TcpConnection>(_subloops[sock->fd() % _subloops.size()], sock);
+    // TcpConnection* conn = new TcpConnection(_mainloop.get(), sock);
     conn->setDeleteConnectionCallback(std::bind(&TcpServer::deleteConncetion, this, std::placeholders::_1));
-    conn->setOnConnectCallback(_on_connect_cb);
     conn->setPeerAddr(*addr);
-    _conns[sock->fd()] = conn;
+    conn->setOnRecvCallback(_on_recv_cb);
+    _conns[sock->fd()] = std::move(conn);
+    if (_on_connect_cb) {
+        _on_connect_cb(_conns[sock->fd()].get());
+    }
 }
 
 void TcpServer::deleteConncetion(Socket* sock)
 {
     if (sock->fd() == -1)
         return;
-    int fd = sock->fd();
-    auto it = _conns.find(fd);
+    auto it = _conns.find(sock->fd());
     if (it != _conns.end()) {
-        TcpConnection* del = _conns[fd];
-        _conns.erase(fd);
-        delete del;
-        _accpetor->deleteSock(fd);
+        _conns.erase(sock->fd());
         // oar::close(sock->fd()); // 有则error
     }
 }
 
 void TcpServer::setOnConnectCallback(ConnectCallBack cb)
 {
-    _on_connect_cb = cb;
+    _on_connect_cb = std::move(cb);
 }
+
+void TcpServer::onRecv(RecvCallBack cb)
+{
+    _on_recv_cb = std::move(cb);
+}
+
+void TcpServer::onConnect(ConnectCallBack cb)
+{
+    _on_connect_cb = std::move(cb);
+}
+
 }

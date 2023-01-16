@@ -1,4 +1,5 @@
 
+#include <memory>
 #ifdef OS_LINUX
 #include <sys/epoll.h>
 #endif
@@ -31,7 +32,6 @@ public:
 
 private:
     int _fd;
-// epoll_event* _events;
 #ifdef OS_LINUX
     std::vector<struct epoll_event> _events;
 #endif

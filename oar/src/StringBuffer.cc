@@ -1,15 +1,16 @@
-#include "oar/StringBuffer.h"
+#include "StringBuffer.h"
 #include "oar/Endian.h"
 #include "oar/Mutex.h"
 #include "oar/ThisThread.h"
 #include <cstdint>
+#include <cstdio>
 #include <string.h>
 namespace oar {
-StringBuffer::StringBuffer()
+StringBuffer::StringBuffer(int size)
     : _rIndex(0)
     , _wIndex(0)
 {
-    _buf.resize(initial_size);
+    _buf.resize(size);
 }
 
 StringBuffer::~StringBuffer() { }

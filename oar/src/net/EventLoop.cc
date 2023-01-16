@@ -4,11 +4,12 @@
 #include <algorithm>
 #include <cstdio>
 #include <sys/epoll.h>
+#include <type_traits>
 #include <vector>
 namespace oar {
 
 EventLoop::EventLoop()
-    : _poller(new Poller)
+    : _poller(std::make_unique<Poller>())
     , _stop(false)
 {
 }
@@ -16,7 +17,7 @@ EventLoop::EventLoop()
 EventLoop::~EventLoop()
 {
     stop();
-    delete _poller;
+    // delete _poller;
 }
 
 void EventLoop::loop()

@@ -57,5 +57,10 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp"
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/oar",
+    {
+        "debug.allowBreakpointsEverywhere": true,
+        "C_Cpp.intelliSenseEngine": "Disabled"
     }
 }

@@ -1,31 +1,33 @@
 #include "net/Acceptor.h"
-#include "oar/net/Channel.h"
+#include "net/Channel.h"
 #include "oar/net/InetAddress.h"
 #include "oar/net/Socket.h"
 #include <algorithm>
 #include <cstdio>
 #include <functional>
+#include <memory>
 
 namespace oar {
 Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenaddr)
-    : _loop(loop)
-    , _sock(new Socket)
-    , _addr(new InetAddress(listenaddr))
+    : _sock(std::make_unique<Socket>())
+    , _addr(std::make_unique<InetAddress>(listenaddr))
+    , _loop(loop)
 {
     _sock->bind(*_addr);
     _sock->listen();
     _sock->set_nonblocking();
-    _accept_channel = new Channel(_loop, _sock->fd());
+    // _accept_channel = new Channel(_loop, _sock->fd());
+    _accept_channel = std::make_unique<Channel>(loop, _sock->fd());
     // _accept_channel->setCallback(std::bind(&Acceptor::acceptConnection, this));
     _accept_channel->setReadCallback(std::bind(&Acceptor::acceptConnection, this));
-    _accept_channel->enableReading();
+    _accept_channel->enableRd();
 }
 
 Acceptor::~Acceptor()
 {
-    delete _sock;
-    delete _addr;
-    delete _accept_channel;
+    // delete _sock;
+    // delete _addr;
+    // delete _accept_channel;
     // for (auto* sock : _accepted_socks) {
     //     delete sock;
     // }

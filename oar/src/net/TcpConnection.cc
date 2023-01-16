@@ -10,55 +10,65 @@
 #include <cstdio>
 #include <cstring>
 #include <functional>
+#include <memory>
 #include <oar/net/socketapi.h>
 #include <string>
 #include <strings.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <type_traits>
 #include <unistd.h>
 namespace oar {
+
 TcpConnection::TcpConnection(EventLoop* loop, Socket* sock)
-    : _loop(loop)
-    , _ch(nullptr)
+    : _ch()
     , _sock(sock)
-    // , _addr(new InetAddress())
-    , _state(Connected)
+    , _state(Invalid)
     , _rd_buf(new StringBuffer)
     , _wr_buf(new StringBuffer)
 {
-    // _sock = new Socket(sock->accept(*_addr));
     _sock->set_nonblocking();
-    _ch = new Channel(_loop, _sock->fd());
-    // _ch->setCallback(std::bind(&TcpConnection::echo, this, _sock->fd()));
-    // printf("TcpConnection::TcpConnection client_addr : %s:%d\n", _addr->ip().c_str(), _addr->port());
-    _ch->enableReading();
+    _ch = std::make_unique<Channel>(loop, sock->fd());
+    _ch->enableRd();
+    // 没有则一直接受TcpServer::onRecv，持续TcpConnection::read
+    _ch->etMode(true);
+    _state = State::Connected;
 }
 
 TcpConnection::~TcpConnection()
 {
-    delete _ch;
-    delete _sock;
-    delete _wr_buf;
-    // delete _addr;
 }
 
 void TcpConnection::setDeleteConnectionCallback(DeleteConnectionCallback cb)
 {
     _delete_cb = cb;
 }
-void TcpConnection::setOnConnectCallback(OnConnectionCallback cb)
+
+void TcpConnection::setOnRecvCallback(OnRecvCallback cb)
 {
-    _on_connect_cb = cb;
-    _ch->setReadCallback([this]() { _on_connect_cb(this); });
+    _on_recv_cb = std::move(cb);
+    _ch->setReadCallback(std::bind(&TcpConnection::defaultRecvCallback, this));
 }
+
+// void TcpConnection::onRecv(OnRecvCallback cb)
+// {
+//     setOnRecvCallback(cb);
+// }
+// void TcpConnection::onConnect(OnConnectionCallback cb)
+// {
+//     setOnConnectCallback(cb);
+// }
 
 void TcpConnection::close()
 {
-    _delete_cb(_sock);
+    _delete_cb(_sock.get());
 }
 
 void TcpConnection::read()
 {
+    if (_state != State::Connected) {
+        printf("curr state is %d Connection is not connected, can not read\n", _state);
+    }
     assert(_state == State::Connected);
     _rd_buf->clear();
     if (_sock->isNonBlocking())
@@ -69,12 +79,21 @@ void TcpConnection::read()
 
 void TcpConnection::write()
 {
+    if (_state != State::Connected) {
+        printf("curr state is %d Connection is not connected, can not write\n", _state);
+    }
     assert(_state == State::Connected);
     if (_sock->isNonBlocking())
         nonblockingWrite();
     else
         blockingWrite();
     _wr_buf->clear();
+}
+
+void TcpConnection::send(std::string s)
+{
+    _wr_buf->append(s.c_str(), s.size());
+    write();
 }
 
 void TcpConnection::blockingRead()
@@ -101,7 +120,7 @@ void TcpConnection::nonblockingRead()
     int fd = _sock->fd();
     ssize_t rd_bytes = 0;
     char buf[1024];
-    // printf("TcpConnection::nonblockingRead\n");
+    _rd_buf->clear();
     while (true) {
         bzero(buf, sizeof(buf));
         rd_bytes = oar::read(fd, buf, sizeof(buf));
@@ -112,18 +131,16 @@ void TcpConnection::nonblockingRead()
             continue;
         } else if (rd_bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             // 数据全部读取完毕
-            // printf("message from -1 %s %d : %s", _addr->ip().c_str(), _addr->port(), _wr_buf->begin());
-            // oar::write(fd, _wr_buf->begin(), _wr_buf->readableBytes());
-            // _wr_buf->retrieveAll();
-            // _wr_buf->clear();
             break;
         } else if (rd_bytes == 0) {
-            printf("EOF, client fd %d disconnected\n", fd);
+            printf("nonblocking EOF, client fd %d disconnected\n", fd);
             _state = State::Closed;
+            // close();
             break;
         } else {
             printf("Connection reset by peer\n");
             _state = State::Closed;
+            close();
             break;
         }
     }
@@ -132,8 +149,8 @@ void TcpConnection::nonblockingRead()
 void TcpConnection::blockingWrite()
 {
     if (oar::write(_sock->fd(), _wr_buf->begin(), _wr_buf->size()) == -1) {
-        unix_error("Other error on blocking client fd %d\n", _sock->fd());
         _state = State::Closed;
+        unix_error("Other error on blocking client fd %d\n", _sock->fd());
     }
 }
 
@@ -159,5 +176,16 @@ void TcpConnection::nonblockingWrite()
         }
         leftSize -= write_bytes;
     }
+}
+
+void TcpConnection::defaultRecvCallback()
+{
+    // if (_state == State::Connected) {
+    // read();
+    _on_recv_cb(this);
+    // } else if (_state == State::Closed) {
+    // close();
+    // printf("defaultRecvCallback connect closed\n");
+    // }
 }
 }

@@ -9,12 +9,14 @@
 #include <vector>
 
 namespace oar {
+
 class ContentPiece;
+
 class StringBuffer {
 public:
-    static const int initial_size = 1024;
+    static constexpr int initial_size = 1024;
 
-    StringBuffer();
+    StringBuffer(int size = initial_size);
     ~StringBuffer();
 
     void append(const char* str, size_t size);

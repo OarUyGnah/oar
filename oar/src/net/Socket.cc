@@ -2,6 +2,7 @@
 #include "net/InetAddress.h"
 #include "oar/net/socketapi.h"
 #include <asm-generic/socket.h>
+#include <cstdio>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <wchar.h>
@@ -35,8 +36,10 @@ void Socket::set_nonblocking()
 
 void Socket::bind(const InetAddress& addr)
 {
+    printf("Socket::bind\n");
     oar::bind(_fd, (struct sockaddr*)(addr.addrPtr()));
     // _addr->setaddr(*addr.addrPtr());
+    printf("Socket::bind\n");
 }
 
 void Socket::listen()

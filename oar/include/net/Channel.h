@@ -32,15 +32,16 @@ public:
     bool inEpoll() { return _inpoll; }
     void setInEpoll(bool in) { _inpoll = in; }
 
-    void enableReading();
+    void enableRd();
+    void enableWr();
     void processEvent();
     void etMode(bool on);
 
     void setReadCallback(ReadCallback cb)
     {
-        _rd_cb = cb;
+        _rd_cb = std::move(cb);
     }
-    void setWriteCallback(WriteCallback cb) { _wr_cb = cb; }
+    void setWriteCallback(WriteCallback cb) { _wr_cb = std::move(cb); }
 
 #ifdef OS_LINUX
     bool isET()
