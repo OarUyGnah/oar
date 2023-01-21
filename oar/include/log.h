@@ -52,6 +52,38 @@
     LOG_FORMAT(logger, oar::LogLevel::ERROR, format, __VA_ARGS__)
 #define LOG_FORMAT_FATAL(logger, format, ...) \
     LOG_FORMAT(logger, oar::LogLevel::FATAL, format, __VA_ARGS__)
+
+#define Debug                              \
+    std_logger->addAppender(std_appender); \
+    LOG_LEVEL(std_logger, oar::LogLevel::DEBUG)
+#define Info                               \
+    std_logger->addAppender(std_appender); \
+    LOG_LEVEL(std_logger, oar::LogLevel::INFO)
+#define Warn                               \
+    std_logger->addAppender(std_appender); \
+    LOG_LEVEL(std_logger, oar::LogLevel::WARN)
+#define Error                              \
+    std_logger->addAppender(std_appender); \
+    LOG_LEVEL(std_logger, oar::LogLevel::ERROR)
+#define Fatal                              \
+    std_logger->addAppender(std_appender); \
+    LOG_LEVEL(std_logger, oar::LogLevel::FATAL)
+#define FDebug(format, ...)              \
+    std_logger->addAppender(std_appender); \
+    LOG_FORMAT(std_logger, oar::LogLevel::DEBUG, format, __VA_ARGS__)
+#define FInfo(format, ...)              \
+    std_logger->addAppender(std_appender); \
+    LOG_FORMAT(std_logger, oar::LogLevel::INFO, format, __VA_ARGS__)
+#define FWarn(format, ...)              \
+    std_logger->addAppender(std_appender); \
+    LOG_FORMAT(std_logger, oar::LogLevel::WARN, format, __VA_ARGS__)
+#define FError(format, ...)              \
+    std_logger->addAppender(std_appender); \
+    LOG_FORMAT(std_logger, oar::LogLevel::ERROR, format, __VA_ARGS__)
+#define FFatal(format, ...)              \
+    std_logger->addAppender(std_appender); \
+    LOG_FORMAT(std_logger, oar::LogLevel::FATAL, format, __VA_ARGS__)
+
 namespace oar {
 
 class Logger;
@@ -183,7 +215,7 @@ public:
           };
 };
 
-class LogAppender {
+class LogAppender : public std::enable_shared_from_this<LogAppender> {
     friend class Logger;
 
 public:
@@ -206,35 +238,6 @@ protected:
     MutexType _mutex;
     LogFormatter::formatterPtr _formatter;
     bool _hasFormatter = false;
-};
-
-class FileAppender : public LogAppender {
-public:
-    using fileAppenderPtr = std::shared_ptr<FileAppender>;
-
-    FileAppender(std::string filename)
-        : _filename(filename)
-    {
-        std::cout << "open test" << std::endl;
-    }
-
-    void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
-        LogEvent::eventPtr event);
-
-    bool reopen();
-
-private:
-    std::ofstream _ofs;
-    std::string _filename;
-    uint64_t _lastTime;
-};
-
-class StdoutAppender : public LogAppender {
-public:
-    using StdoutAppenderPtr = std::shared_ptr<StdoutAppender>;
-    // StdoutAppender() = default;
-    void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
-        LogEvent::eventPtr event);
 };
 
 class Logger : public std::enable_shared_from_this<Logger> {
@@ -275,6 +278,36 @@ private:
     std::list<LogAppender::appendPtr> _appenders;
     LogFormatter::formatterPtr _formatter;
     Logger::LoggerPtr _mainLogger; // 主日志器
+};
+
+class FileAppender : public LogAppender {
+public:
+    using fileAppenderPtr = std::shared_ptr<FileAppender>;
+
+    FileAppender(std::string filename)
+        : _filename(filename)
+    {
+        std::cout << "open test" << std::endl;
+    }
+
+    void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
+        LogEvent::eventPtr event);
+
+    bool reopen();
+
+private:
+    std::ofstream _ofs;
+    std::string _filename;
+    uint64_t _lastTime;
+};
+
+class StdoutAppender : public LogAppender {
+public:
+    using StdoutAppenderPtr = std::shared_ptr<StdoutAppender>;
+    // StdoutAppender();
+    // StdoutAppender(oar::Logger::LoggerPtr ptr);
+    void log(std::shared_ptr<Logger> logger, LogLevel::Level level,
+        LogEvent::eventPtr event);
 };
 
 class LoggerManager {
@@ -324,6 +357,8 @@ private:
     LogEvent::eventPtr _event;
 };
 
+extern oar::Logger::LoggerPtr std_logger;
+extern std::shared_ptr<oar::StdoutAppender> std_appender;
 extern oar::SingletonPtr<oar::LoggerManager> LoggerMgr;
 } // namespace oar
 

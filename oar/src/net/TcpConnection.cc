@@ -158,8 +158,9 @@ void TcpConnection::nonblockingWrite()
 {
     int fd = _sock->fd();
     char buf[_wr_buf->size()];
-    memcpy(buf, _wr_buf->begin(), _wr_buf->size());
-    int totalSize = _wr_buf->size();
+    memcpy(buf, _wr_buf->rBegin(), _wr_buf->readableBytes());
+    printf("nonblockingWrite : %s totalsize = %d\n", buf, _wr_buf->readableBytes());
+    int totalSize = _wr_buf->readableBytes();
     int leftSize = totalSize;
     ssize_t write_bytes = 0;
     while (leftSize > 0) {
@@ -180,12 +181,12 @@ void TcpConnection::nonblockingWrite()
 
 void TcpConnection::defaultRecvCallback()
 {
-    // if (_state == State::Connected) {
-    // read();
-    _on_recv_cb(this);
-    // } else if (_state == State::Closed) {
-    // close();
-    // printf("defaultRecvCallback connect closed\n");
-    // }
+    if (_state == State::Connected) {
+        // read();
+        _on_recv_cb(this);
+        // } else if (_state == State::Closed) {
+        // close();
+        // printf("defaultRecvCallback connect closed\n");
+    }
 }
 }

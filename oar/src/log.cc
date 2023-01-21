@@ -1,20 +1,27 @@
-#include "oar/log.h"
+#include "log.h"
 #include "oar/Mutex.h"
 #include "oar/utils/strutil.h"
 #include <algorithm>
 #include <bits/types/struct_tm.h>
 #include <cerrno>
 #include <cstddef>
+#include <cstdio>
 #include <ctime>
 #include <functional>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <new>
 #include <tuple>
 #include <utility>
 #include <vector>
 
 namespace oar {
+oar::Logger::LoggerPtr std_logger = oar::SingletonPtr<oar::Logger>::getInstance();
+
+// static oar::StdoutAppender::StdoutAppenderPtr oar::std_appender = std::make_shared<oar::StdoutAppender>();
+StdoutAppender::StdoutAppenderPtr std_appender = std::make_shared<oar::StdoutAppender>();
+
 const char* LogLevel::toString(LogLevel::Level level)
 {
     switch (level) {
@@ -345,7 +352,7 @@ void LogFormatter::initFormatter()
         } else {
             switch (_pattern[i]) {
             case ':':
-                std::cout << ":" << std::endl;
+                // std::cout << ":" << std::endl;
                 vec.emplace_back(true, _pattern[i], i, "");
                 break;
             case '[':
@@ -408,10 +415,10 @@ void LogFormatter::initFormatter()
                 "<<error_format %" + std::string(std::get<1>(tuple), 1) + ">>")));
         }
     }
-    int times = 0;
-    for (auto& i : _items) {
-        std::cout << ++times << std::endl;
-    }
+    // int times = 0;
+    // for (auto& i : _items) {
+    //     std::cout << ++times << std::endl;
+    // }
 }
 
 // void LogFormatter::initFormatter() {
@@ -579,6 +586,13 @@ bool FileAppender::reopen()
     return FSUtil::openForWrite(_ofs, _filename, std::ios::app);
 }
 
+// StdoutAppender::StdoutAppender(oar::Logger::LoggerPtr ptr) {
+//     ptr->addAppender(std::make_shared<StdoutAppender>(this));
+// }
+// StdoutAppender::StdoutAppender() {
+//     std_logger->addAppender();
+// }
+
 void StdoutAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level,
     LogEvent::eventPtr event)
 {
@@ -628,6 +642,10 @@ void Logger::addAppender(LogAppender::appendPtr appender)
         // MutexGuard mgInner(appender->_mutex);
         appender->_formatter = _formatter;
     }
+    auto it = std::find_if(_appenders.begin(), _appenders.end(), [&appender](LogAppender::appendPtr ptr) {
+        return ptr == appender;
+    });
+    if(it!=_appenders.end()) return;
     _appenders.push_back(appender);
 }
 void Logger::rmAppender(LogAppender::appendPtr appender)
@@ -667,7 +685,7 @@ void Logger::setFormatter(const std::string& val)
 LoggerManager::LoggerManager()
 {
     _mainLogger.reset(new Logger);
-    _mainLogger->addAppender(LogAppender::appendPtr(new StdoutAppender));
+    _mainLogger->addAppender(LogAppender::appendPtr(std_appender));
     _loggers.insert({ _mainLogger->getName(), _mainLogger });
 }
 
